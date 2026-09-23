@@ -1,305 +1,153 @@
+#include <Arduino.h>
 #include <Wire.h>
-#include <MPU6050.h>
 #include "MAX30105.h"
-#include "heartRate.h"
 #include "spo2_algorithm.h"
+#include <WiFi.h>
 
-MPU6050 mpu;
+// ---------------- WiFi ----------------
+const char* ssid = "TU_RED_WIFI";
+const char* password = "TU_CONTRASEÑA";
+
+// ---------------- MAX30102 ----------------
 MAX30105 particleSensor;
 
-// ── Umbrales MPU6050 ───────────────────────────────────────────
-const float    FREEFALL_THRESHOLD  = 3.0f;
-const uint32_t FREEFALL_MIN_MS     = 30;
-const float    IMPACT_THRESHOLD    = 25.0f;
-const uint32_t IMPACT_WINDOW_MS    = 500;
-const uint32_t COOLDOWN_MS         = 3000;
-
-// ── Umbrales MAX30102 ──────────────────────────────────────────
-const float BPM_LOW        = 40.0f;
-const float BPM_HIGH       = 150.0f;
-const float SPO2_LOW       = 90.0f;
-const uint32_t POST_FALL_MONITOR_MS = 15000;
-
-// ── Botón de emergencia ────────────────────────────────────────
-const uint8_t  BOTON_PIN         = 2;      // ← cambiá al GPIO que uses
-const uint32_t BOTON_DEBOUNCE_MS = 50;     // anti-rebote
-const uint32_t BOTON_HOLD_MS     = 1000;   // mantener 1s para confirmar
-const uint32_t BOTON_COOLDOWN_MS = 10000;  // evita spam de alertas
-
-// ── Buffers SpO2/BPM ──────────────────────────────────────────
 #define BUFFER_SIZE 100
+
 uint32_t irBuffer[BUFFER_SIZE];
 uint32_t redBuffer[BUFFER_SIZE];
-int32_t  spo2Value      = 0;
-int8_t   spo2Valid      = 0;
-int32_t  heartRate      = 0;
-int8_t   heartRateValid = 0;
 
-// ── Variables de estado MPU6050 ────────────────────────────────
-bool     inFreefall     = false;
-uint32_t freefallStart  = 0;
-bool     freefallValid  = false;
-uint32_t freefallEnd    = 0;
-uint32_t lastAlertTime  = 0;
+int32_t bufferLength = BUFFER_SIZE;
+int32_t spo2;
+int8_t validSPO2;
+int32_t heartRate;
+int8_t validHeartRate;
 
-// ── Variables de estado post-caída ────────────────────────────
-bool     postFallMonitor = false;
-uint32_t postFallStart   = 0;
+// Para promediar y estabilizar
+#define NUM_READINGS 5
+int32_t bpmReadings[NUM_READINGS];
+int32_t spo2Readings[NUM_READINGS];
+int readingIndex = 0;
+bool bufferFilled = false;
 
-// ── Variables de estado del botón ─────────────────────────────
-bool     botonPresionado     = false;
-uint32_t botonPressStart     = 0;
-bool     botonHoldConfirmado = false;
-uint32_t ultimaAlertaBoton   = 0;
+// ---------------- MPU6050 ----------------
 
-// ── Índice circular MAX30102 ───────────────────────────────────
-uint8_t  bufIndex    = 0;
-bool     bufferLleno = false;
+#define SDA_PIN 8
+#define SCL_PIN 9
+#define MPU6050_ADDR 0x68
+#define ACCEL_SENSITIVITY 16384.0f
+#define GYRO_SENSITIVITY  131.0f
 
-// ──────────────────────────────────────────────────────────────
-void enviarAlertaEmergencia() {
-  Serial.println("╔══════════════════════════════════╗");
-  Serial.println("║      🚨 ALERTA DE EMERGENCIA      ║");
-  Serial.println("╠══════════════════════════════════╣");
-  Serial.println("║  El usuario presionó el botón    ║");
-  Serial.println("║  de emergencia manualmente.      ║");
-  Serial.println("║                                  ║");
-  Serial.println("║  [TODO] Enviar SMS/notificación  ║");
-  Serial.println("║  al contacto de emergencia.      ║");
-  Serial.println("╠══════════════════════════════════╣");
+void leerMPU6050(float &ax, float &ay, float &az,
+                  float &gx, float &gy, float &gz,
+                  float &tempMPU) {
+  Wire.beginTransmission(MPU6050_ADDR);
+  Wire.write(0x3B);
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU6050_ADDR, 14, true);
 
-  // Adjunta signos vitales al momento de la alerta
-  if (heartRateValid) {
-    Serial.printf("║  BPM:  %3d bpm                   ║\n", heartRate);
-  } else {
-    Serial.println("║  BPM:  calculando...             ║");
-  }
-  if (spo2Valid) {
-    Serial.printf("║  SpO2: %3d%%                      ║\n", spo2Value);
-  } else {
-    Serial.println("║  SpO2: calculando...             ║");
-  }
+  int16_t rawAX = Wire.read() << 8 | Wire.read();
+  int16_t rawAY = Wire.read() << 8 | Wire.read();
+  int16_t rawAZ = Wire.read() << 8 | Wire.read();
+  int16_t rawTemp = Wire.read() << 8 | Wire.read();
+  int16_t rawGX = Wire.read() << 8 | Wire.read();
+  int16_t rawGY = Wire.read() << 8 | Wire.read();
+  int16_t rawGZ = Wire.read() << 8 | Wire.read();
 
-  Serial.println("╚══════════════════════════════════╝");
+  ax = rawAX / ACCEL_SENSITIVITY;
+  ay = rawAY / ACCEL_SENSITIVITY;
+  az = rawAZ / ACCEL_SENSITIVITY;
+
+  gx = rawGX / GYRO_SENSITIVITY;
+  gy = rawGY / GYRO_SENSITIVITY;
+  gz = rawGZ / GYRO_SENSITIVITY;
+
+  tempMPU = rawTemp / 340.0 + 36.53;
 }
 
-// ──────────────────────────────────────────────────────────────
-// Lee el botón con anti-rebote y detección de pulsación larga.
-// Dispara la alerta solo si se mantiene >= BOTON_HOLD_MS.
-// ──────────────────────────────────────────────────────────────
-void leerBotonEmergencia() {
-  bool estadoActual = (digitalRead(BOTON_PIN) == LOW); // LOW = presionado (pull-up)
-  uint32_t now = millis();
-
-  if (estadoActual && !botonPresionado) {
-    // Flanco de bajada: empieza la pulsación
-    botonPresionado     = true;
-    botonPressStart     = now;
-    botonHoldConfirmado = false;
-
-  } else if (estadoActual && botonPresionado && !botonHoldConfirmado) {
-    // Sigue presionado: verificar si ya cumplió el tiempo de hold
-    if ((now - botonPressStart) >= BOTON_HOLD_MS) {
-      botonHoldConfirmado = true;
-
-      // Verificar cooldown para no spamear alertas
-      if ((now - ultimaAlertaBoton) >= BOTON_COOLDOWN_MS) {
-        ultimaAlertaBoton = now;
-        enviarAlertaEmergencia();
-      } else {
-        uint32_t restante = (BOTON_COOLDOWN_MS - (now - ultimaAlertaBoton)) / 1000;
-        Serial.printf("[BOTON] Alerta ya enviada. Esperar %lu s.\n", restante);
-      }
-    } else {
-      // Feedback de progreso cada 200ms mientras se mantiene
-      static uint32_t ultimoFeedback = 0;
-      if ((now - ultimoFeedback) >= 200) {
-        ultimoFeedback = now;
-        uint32_t transcurrido = now - botonPressStart;
-        uint8_t  progreso     = (transcurrido * 100) / BOTON_HOLD_MS;
-        Serial.printf("[BOTON] Manteniendo... %d%%\n", progreso);
-      }
-    }
-
-  } else if (!estadoActual && botonPresionado) {
-    // Flanco de subida: soltaron el botón
-    uint32_t duracion = now - botonPressStart;
-
-    if (duracion < BOTON_DEBOUNCE_MS) {
-      // Ruido / rebote, ignorar
-    } else if (!botonHoldConfirmado) {
-      Serial.println("[BOTON] Pulsación corta ignorada. Mantener 1 segundo para enviar alerta.");
-    }
-    botonPresionado = false;
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-void actualizarMAX30102() {
-  if (particleSensor.available() < 1) {
-    particleSensor.check();
-    return;
-  }
-
-  redBuffer[bufIndex] = particleSensor.getRed();
-  irBuffer[bufIndex]  = particleSensor.getIR();
-  particleSensor.nextSample();
-
-  bufIndex++;
-  if (bufIndex >= BUFFER_SIZE) {
-    bufIndex     = 0;
-    bufferLleno  = true;
-  }
-
-  if (bufferLleno && bufIndex == 0) {
-    maxim_heart_rate_and_oxygen_saturation(
-      irBuffer, BUFFER_SIZE, redBuffer,
-      &spo2Value, &spo2Valid,
-      &heartRate, &heartRateValid
-    );
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-void evaluarSignosVitales(bool esPostCaida) {
-  bool hayAlerta = false;
-
-  if (heartRateValid) {
-    float bpm = (float)heartRate;
-    if (bpm < BPM_LOW || bpm > BPM_HIGH) {
-      hayAlerta = true;
-      Serial.printf("[ALERTA] BPM anormal: %.0f bpm\n", bpm);
-    } else {
-      Serial.printf("[INFO]   BPM: %.0f bpm\n", bpm);
-    }
-  } else {
-    Serial.println("[INFO]   BPM: calculando...");
-  }
-
-  if (spo2Valid) {
-    float spo2 = (float)spo2Value;
-    if (spo2 < SPO2_LOW) {
-      hayAlerta = true;
-      Serial.printf("[ALERTA] SpO2 bajo: %.0f%%\n", spo2);
-    } else {
-      Serial.printf("[INFO]   SpO2: %.0f%%\n", spo2);
-    }
-  } else {
-    Serial.println("[INFO]   SpO2: calculando...");
-  }
-
-  if (esPostCaida && hayAlerta) {
-    Serial.println("[CRITICO] Caida detectada + signos vitales anormales. Requiere asistencia.");
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
 void setup() {
   Serial.begin(115200);
-  Wire.begin();
+  delay(2000);
 
-  // ── Botón ─────────────────────────────────────────────────
-  pinMode(BOTON_PIN, INPUT_PULLUP);
-  Serial.println("[OK] Boton de emergencia listo (GPIO " + String(BOTON_PIN) + ")");
+  // Bus I2C compartido por ambos sensores
+  Wire.begin(SDA_PIN, SCL_PIN);
 
-  // ── MPU6050 ───────────────────────────────────────────────
-  mpu.initialize();
-  if (!mpu.testConnection()) {
-    Serial.println("[ERROR] MPU6050 no encontrado.");
-    while (true) delay(1000);
-  }
-  mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
-  mpu.setDLPFMode(MPU6050_DLPF_BW_20);
-  Serial.println("[OK] MPU6050 listo");
-
-  // ── MAX30102 ──────────────────────────────────────────────
+  // ---- Inicializar MAX30102 ----
   if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) {
-    Serial.println("[ERROR] MAX30102 no encontrado.");
-    while (true) delay(1000);
+    Serial.println("No se encontró el MAX30102. Revisá el cableado.");
+    while (1);
   }
-  particleSensor.setup(60, 4, 2, 100, 411, 4096);
-  particleSensor.setPulseAmplitudeRed(0x3C);
-  particleSensor.setPulseAmplitudeIR(0x3C);
-  Serial.println("[OK] MAX30102 listo");
-  Serial.println("[OK] Sistema listo. Monitoreando...");
+  Serial.println("MAX30102 detectado correctamente.");
+
+  byte ledBrightness = 30;
+  byte sampleAverage = 8; // más promediado interno = menos ruido
+  byte ledMode = 2;
+  int sampleRate = 100;
+  int pulseWidth = 411;
+  int adcRange = 4096;
+
+  particleSensor.setup(ledBrightness, sampleAverage, ledMode, sampleRate, pulseWidth, adcRange);
+
+  // ---- Inicializar MPU6050 ----
+  // Nota: particleSensor.begin() ya deja el bus a 400kHz (I2C_SPEED_FAST),
+  // velocidad totalmente compatible con el MPU6050.
+  Wire.beginTransmission(MPU6050_ADDR);
+  Wire.write(0x6B); // registro de power management
+  Wire.write(0x00); // sacarlo de sleep mode
+  Wire.endTransmission();
+
+  Serial.println("MPU6050 listo. Leyendo datos...");
 }
 
-// ──────────────────────────────────────────────────────────────
 void loop() {
-  // ── Botón de emergencia (prioridad alta) ──────────────────
-  leerBotonEmergencia();
+  // ---- Llenar buffer del MAX30102 ----
+  for (int i = 0; i < bufferLength; i++) {
+    while (particleSensor.available() == false)
+      particleSensor.check();
 
-  // ── Leer MPU6050 ──────────────────────────────────────────
-  int16_t ax16, ay16, az16, gx, gy, gz;
-  mpu.getMotion6(&ax16, &ay16, &az16, &gx, &gy, &gz);
+    redBuffer[i] = particleSensor.getRed();
+    irBuffer[i] = particleSensor.getIR();
+    particleSensor.nextSample();
+  }
 
-  const float LSB_TO_G = 4096.0f;
-  const float G        = 9.80665f;
-  float ax  = (ax16 / LSB_TO_G) * G;
-  float ay  = (ay16 / LSB_TO_G) * G;
-  float az  = (az16 / LSB_TO_G) * G;
-  float mag = sqrt(ax*ax + ay*ay + az*az);
+  maxim_heart_rate_and_oxygen_saturation(irBuffer, bufferLength, redBuffer,
+                                          &spo2, &validSPO2, &heartRate, &validHeartRate);
 
-  uint32_t now = millis();
+  float temperature = particleSensor.readTemperature();
 
-  // ── FASE 1: caída libre ────────────────────────────────────
-  if (mag < FREEFALL_THRESHOLD) {
-    if (!inFreefall) {
-      inFreefall    = true;
-      freefallStart = now;
-      freefallValid = false;
-    } else if ((now - freefallStart) >= FREEFALL_MIN_MS) {
-      freefallValid = true;
+  // ---- Leer MPU6050 (una vez por cada ciclo de 100 muestras) ----
+  float ax, ay, az, gx, gy, gz, tempMPU;
+  leerMPU6050(ax, ay, az, gx, gy, gz, tempMPU);
+
+  // ---- Procesar y mostrar datos del MAX30102 ----
+  if (validHeartRate && validSPO2 && heartRate > 40 && heartRate < 180 && spo2 >= 70 && spo2 <= 100) {
+    bpmReadings[readingIndex] = heartRate;
+    spo2Readings[readingIndex] = spo2;
+    readingIndex = (readingIndex + 1) % NUM_READINGS;
+    if (readingIndex == 0) bufferFilled = true;
+
+    if (bufferFilled) {
+      long bpmSum = 0, spo2Sum = 0;
+      for (int i = 0; i < NUM_READINGS; i++) {
+        bpmSum += bpmReadings[i];
+        spo2Sum += spo2Readings[i];
+      }
+      Serial.print("BPM promedio: ");
+      Serial.print(bpmSum / NUM_READINGS);
+      Serial.print("  SpO2 promedio: ");
+      Serial.print(spo2Sum / NUM_READINGS);
+      Serial.print("%  Temp MAX30102: ");
+      Serial.print(temperature, 1);
+      Serial.println(" C");
+    } else {
+      Serial.println("Estabilizando lectura de pulsioximetro...");
     }
   } else {
-    if (inFreefall) freefallEnd = now;
-    inFreefall = false;
+    Serial.println("Señal no válida - mantené el dedo quieto y firme");
   }
 
-  // ── FASE 2: impacto post-caída ─────────────────────────────
-  if (freefallValid && !inFreefall) {
-    bool dentroDeVentana = (now - freefallEnd) <= IMPACT_WINDOW_MS;
+  // ---- Mostrar datos del MPU6050 ----
+  Serial.printf("Accel X:%.2f Y:%.2f Z:%.2f g | Gyro X:%.2f Y:%.2f Z:%.2f deg/s | Temp MPU:%.1fC\n",
+                ax, ay, az, gx, gy, gz, tempMPU);
 
-    if (dentroDeVentana && mag > IMPACT_THRESHOLD) {
-      if ((now - lastAlertTime) > COOLDOWN_MS) {
-        Serial.println("──────────────────────────────");
-        Serial.println("[CAIDA] Impacto detectado");
-        Serial.printf( "  Magnitud: %.1f m/s²\n", mag);
-        evaluarSignosVitales(true);
-        postFallMonitor = true;
-        postFallStart   = now;
-        lastAlertTime   = now;
-        Serial.println("──────────────────────────────");
-      }
-      freefallValid = false;
-    } else if (!dentroDeVentana) {
-      freefallValid = false;
-    }
-  }
-
-  // ── FASE 3: monitoreo post-caída ───────────────────────────
-  if (postFallMonitor) {
-    uint32_t elapsed = now - postFallStart;
-
-    static uint32_t ultimaEvaluacion = 0;
-    if ((now - ultimaEvaluacion) >= 2000) {
-      ultimaEvaluacion = now;
-      Serial.printf("[POST-CAIDA] t+%lu s\n", elapsed / 1000);
-      evaluarSignosVitales(true);
-    }
-
-    if (elapsed >= POST_FALL_MONITOR_MS) {
-      postFallMonitor = false;
-      Serial.println("[INFO] Fin de monitoreo post-caída.");
-    }
-  }
-
-  // ── Leer MAX30102 ─────────────────────────────────────────
-  actualizarMAX30102();
-
-  delay(10); // proyecto
-
-
-  delay(10); // proyecto
-
+  Serial.println("--------------------------------------------------");
 }
