@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="logo.png" type="image/png">
+  <title>MOON – Pulsera Inteligente de Monitoreo</title>
+  <meta name="description" content="MOON es una pulsera inteligente que detecta caídas, monitorea signos vitales y alerta a contactos de emergencia en tiempo real. Proyecto de la Escuela de Educación Técnica N°7, Taller Regional Quilmes." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MOON – Pulsera Inteligente de Monitoreo" />
+  <meta property="og:description" content="Detecta caídas, mide signos vitales y alerta a tus contactos de emergencia en tiempo real." />
+  <meta property="og:image" content="https://proyectomoon.github.io/Web/logo-glass.png" />
+  <meta property="og:url" content="https://proyectomoon.github.io/Web/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night: #0b0f1a;
+      --deep: #111827;
+      --surface: #161d2e;
+      --card: #1e2840;
+      --border: #263050;
+      --blue: #243869;
+      --blue-light: #3a5599;
+      --blue-dim: rgba(36, 56, 105, 0.15);
+      --moon: #8fa8c8;
+      --moon-dim: rgba(143,168,200,0.12);
+      --text: #e8edf5;
+      --text-muted: #8a96a8;
+      --text-dim: #5a6478;
+      --white: #FFFFFF;
+
+      --color-text-primary: #e8edf5;
+      --color-text-secondary: #8a96a8;
+      --color-background-primary: #1e2840;
+      --color-background-secondary: #161d2e;
+      --color-border-tertiary: #263050;
+      --color-border-secondary: #2e3a58;
+      --border-radius-lg: 12px;
+      --border-radius-md: 8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--night);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(11,15,26,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5%;
+      height: 64px;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.4rem; font-weight: 700; letter-spacing: 0.2em;
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .nav-logo-icon {
+      width: 30px; height: auto;
+      flex-shrink: 0;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--text-muted); text-decoration: none;
+      font-size: 0.875rem; font-weight: 500; letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--moon); }
+
+    /* Botón hamburguesa (solo se ve en celular, ver media query al final) */
+    .nav-burger {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--blue);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 0;
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 80px 5% 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(212,168,67,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-icon-bg {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -54%);
+      width: clamp(320px, 38vw, 560px);
+      height: auto;
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+    }
+    .hero h1, .hero-tagline, .hero-cta { position: relative; z-index: 1; }
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(4rem, 12vw, 9rem);
+      font-weight: 700; letter-spacing: 0.15em;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--blue-light) 0%, var(--blue) 50%, var(--moon) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.5rem;
+    }
+    .hero-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--text-muted);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+    .hero-cta {
+      display: inline-block;
+      background: var(--blue);
+      color: var(--white);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600; font-size: 0.9rem; letter-spacing: 0.08em;
+      padding: 14px 32px; border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .hero-cta:hover { background: var(--blue-light); transform: translateY(-2px); }
+
+    /* SECTIONS */
+    section { padding: 80px 5%; scroll-margin-top: 64px; transition: box-shadow 0.6s ease; }
+    section.pm-highlight { box-shadow: inset 0 0 0 1px var(--blue-light); }
+
+    /* CTA FINAL */
+    #contacto {
+      background: var(--night);
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    #contacto .section-title { margin-bottom: 0.8rem; }
+    #contacto .section-body { max-width: 480px; margin: 0 auto 2rem; }
+    .contacto-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+    .contacto-btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600; font-size: 0.85rem; letter-spacing: 0.06em;
+      padding: 12px 26px; border-radius: 4px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+    }
+    .contacto-btn.primary { background: var(--blue); color: var(--white); }
+    .contacto-btn.primary:hover { background: var(--blue-light); transform: translateY(-2px); }
+    .contacto-btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .contacto-btn.secondary:hover { border-color: var(--blue-light); color: var(--moon); transform: translateY(-2px); }
+    .section-label {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--blue); margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 600; line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 1.2rem;
+    }
+    .section-body {
+      color: var(--text-muted); max-width: 640px; line-height: 1.8;
+    }
+    .divider {
+      height: 1px; background: var(--border);
+      margin: 0 5%;
+    }
+
+    /* MONITOR DE PACIENTE */
+    #monitor { background: var(--night); }
+
+    .pm-root { font-family: 'Space Grotesk', 'Inter', sans-serif; padding: 0; }
+    .pm-header { margin-bottom: 1.5rem; }
+    .pm-label { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #3a5599; margin-bottom: 0.4rem; }
+    .pm-title { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 0.25rem; }
+    .pm-sub { font-size: 14px; color: var(--color-text-secondary); }
+    .pm-patient { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .pm-avatar { width: 52px; height: 52px; border-radius: 50%; background: #1e2840; border: 1.5px solid #3a5599; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: #8fa8c8; flex-shrink: 0; }
+    .pm-patient-info { flex: 1; min-width: 160px; }
+    .pm-patient-name { font-size: 16px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 2px; }
+    .pm-patient-meta { font-size: 13px; color: var(--color-text-secondary); }
+    .pm-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pm-badge { font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
+    .pm-badge-warn { background: rgba(239,159,39,0.16); color: #f0b558; border: 1px solid rgba(239,159,39,0.35); }
+    .pm-badge-danger { background: rgba(226,75,74,0.16); color: #f18988; border: 1px solid rgba(226,75,74,0.35); }
+    .pm-badge-ok { background: rgba(99,153,34,0.16); color: #9bd15a; border: 1px solid rgba(99,153,34,0.35); }
+    .pm-badge-info { background: rgba(58,85,153,0.18); color: #8fa8c8; border: 1px solid rgba(58,85,153,0.4); }
+    .pm-vitals-title { font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 1rem; }
+    .pm-vitals { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 1.5rem; }
+    .pm-vital { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.1rem 1.25rem; position: relative; overflow: hidden; transition: border-color 0.2s; }
+    .pm-vital.danger { border-color: #E24B4A; }
+    .pm-vital.warning { border-color: #EF9F27; }
+    .pm-vital.ok { border-color: #639922; }
+    .pm-vital-icon { font-size: 20px; margin-bottom: 10px; }
+    .pm-vital-icon.danger { color: #E24B4A; }
+    .pm-vital-icon.warning { color: #BA7517; }
+    .pm-vital-icon.ok { color: #639922; }
+    #icon-bpm i { display: inline-block; animation: pm-heartbeat 1.4s ease-in-out infinite; }
+    @keyframes pm-heartbeat {
+      0%, 100% { transform: scale(1); }
+      15% { transform: scale(1.18); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.12); }
+      60% { transform: scale(1); }
+    }
+    .pm-vital-name { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; font-weight: 500; letter-spacing: 0.05em; }
+    .pm-vital-val { font-size: 28px; font-weight: 500; color: var(--color-text-primary); line-height: 1; margin-bottom: 3px; }
+    .pm-vital-unit { font-size: 12px; color: var(--color-text-secondary); display: inline; }
+    .pm-vital-status { font-size: 12px; font-weight: 600; margin-top: 8px; padding: 3px 10px; border-radius: 12px; display: inline-block; }
+    .status-danger { background: rgba(226,75,74,0.16); color: #f18988; border: 1px solid rgba(226,75,74,0.35); }
+    .status-warning { background: rgba(239,159,39,0.16); color: #f0b558; border: 1px solid rgba(239,159,39,0.35); }
+    .status-ok { background: rgba(99,153,34,0.16); color: #9bd15a; border: 1px solid rgba(99,153,34,0.35); }
+    .pm-bar { height: 4px; border-radius: 2px; margin-top: 10px; background: var(--color-border-tertiary); }
+    .pm-bar-fill { height: 4px; border-radius: 2px; transition: width 0.4s; }
+    .pm-diag-title { font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 1rem; }
+    .pm-diags { display: flex; flex-direction: column; gap: 10px; }
+    .pm-diag { display: flex; align-items: flex-start; gap: 12px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 14px 16px; border-left: 3px solid transparent; }
+    .pm-diag.diag-danger { border-left-color: #E24B4A; }
+    .pm-diag.diag-warning { border-left-color: #EF9F27; }
+    .pm-diag.diag-ok { border-left-color: #639922; }
+    .pm-diag-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .pm-diag-icon.danger { color: #E24B4A; }
+    .pm-diag-icon.warning { color: #BA7517; }
+    .pm-diag-icon.ok { color: #639922; }
+    .pm-diag-head { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 2px; }
+    .pm-diag-body { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+    .pm-controls { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+    .pm-ctrl-title { font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 1rem; }
+    .pm-ctrl-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .pm-ctrl-row:last-child { margin-bottom: 0; }
+    .pm-ctrl-label { font-size: 13px; color: var(--color-text-secondary); width: 140px; flex-shrink: 0; }
+    .pm-ctrl-row input[type=range] { flex: 1; min-width: 100px; accent-color: #3a5599; }
+    .pm-ctrl-val { font-size: 14px; font-weight: 500; color: var(--color-text-primary); min-width: 56px; text-align: right; }
+    .pm-diseases { margin-bottom: 1.5rem; }
+    .pm-diseases-label { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 8px; }
+    .pm-diseases-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pm-disease-pill { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 20px; cursor: pointer; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); transition: all 0.15s; user-select: none; }
+    .pm-disease-pill.active { background: #1e2840; color: #8fa8c8; border-color: #3a5599; }
+
+    /* DETECCIÓN DE CAÍDAS (demo) */
+    .pt-fall-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.1rem 1.25rem; margin-bottom: 1.5rem; transition: border-color 0.25s; }
+    .pt-fall-card.is-active { border-color: #639922; }
+    .pt-fall-card.is-alert { border-color: #E24B4A; animation: pm-alarm-flash 1s infinite; }
+    @keyframes pm-alarm-flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.65; } }
+    .pt-fall-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .pt-fall-icon { width: 42px; height: 42px; border-radius: 50%; background: var(--color-background-secondary); border: 1.5px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--moon); flex-shrink: 0; }
+    .pt-fall-card.is-active .pt-fall-icon { border-color: #639922; color: #9bd15a; }
+    .pt-fall-card.is-alert .pt-fall-icon { border-color: #E24B4A; color: #f18988; }
+    .pt-fall-info { flex: 1; min-width: 150px; }
+    .pt-fall-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+    .pt-fall-sub { font-size: 12px; color: var(--text-dim); }
+    .pt-fall-metrics { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.9rem; font-size: 12.5px; color: var(--text-muted); }
+    .pt-fall-metrics b { color: var(--text); font-weight: 500; }
+    .pt-fall-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 0.9rem; }
+    .pm-sim-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: border-color 0.2s, color 0.2s; }
+    .pm-sim-btn:hover:not([disabled]) { border-color: var(--blue-light); color: var(--moon); }
+    .pm-sim-btn[disabled] { opacity: 0.5; cursor: default; }
+    .pt-fall-dismiss { display: none; background: #E24B4A; color: #fff; border: none; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+
+    /* OBJETIVO */
+    #objetivo { background: var(--deep); }
+
+    .objetivo-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 560px;
+      margin-bottom: 2.5rem;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      border-color: var(--blue-light);
+      transform: translateY(-3px);
+    }
+    .feature-card .card-icon {
+      font-size: 22px;
+      color: var(--moon);
+    }
+    .feature-card .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .feature-card .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* COMPONENTES */
+    #componentes { background: var(--deep); }
+    .components-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+    .component-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .component-card:hover { border-color: var(--blue-light); transform: translateY(-3px); }
+    .component-body { padding: 1.4rem; }
+    .component-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem; font-weight: 600;
+      color: var(--text); margin-bottom: 0.3rem;
+    }
+    .component-role { font-size: 0.78rem; color: var(--white); margin-bottom: 0.7rem; font-weight: 500; }
+    .component-desc { font-size: 0.83rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* EQUIPO */
+    #equipo { background: var(--night); }
+
+    .members-list {
+      display: flex; flex-wrap: wrap; gap: 0.75rem;
+      margin-top: 2rem;
+    }
+    .member-pill {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 8px 18px 8px 8px;
+      font-size: 0.88rem; color: var(--text);
+      font-family: 'Space Grotesk', sans-serif; font-weight: 500;
+    }
+    .member-initials {
+      width: 32px; height: 32px; flex-shrink: 0;
+      background: var(--blue-dim); border: 1px solid var(--blue);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; color: var(--blue);
+    }
+
+    .contrib-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .contrib-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.4rem;
+      transition: border-color 0.2s;
+    }
+    .contrib-card:hover { border-color: var(--blue); }
+    .contrib-header {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 0.9rem;
+    }
+    .contrib-avatar {
+      width: 42px; height: 42px; flex-shrink: 0;
+      background: var(--blue-dim); border: 1px solid var(--blue);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem; font-weight: 700; color: var(--blue);
+    }
+    .contrib-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem; font-weight: 700; color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+    .contrib-role { font-size: 0.72rem; color: var(--white); font-weight: 500; }
+    .contrib-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* CRONOGRAMA */
+    #cronograma { background: var(--deep); }
+    .cronograma-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 2.5rem;
+      max-width: 720px;
+    }
+    .crono-item {
+      display: flex; align-items: flex-start; gap: 1.2rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.2rem 1.4rem;
+      transition: border-color 0.2s;
+    }
+    .crono-item:hover { border-color: var(--blue-light); }
+    .crono-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--blue-light);
+      min-width: 32px;
+    }
+    .crono-fase {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem; font-weight: 600;
+      color: var(--text); margin-bottom: 0.2rem;
+    }
+    .crono-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* FOOTER */
+footer {
+  background: var(--night);
+  border-top: 1px solid var(--border);
+  padding: 2.5rem 5%;
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Logo + Institución */
+  align-items: start;
+  gap: 1.5rem;
+}
+.footer-left {
+  text-align: left;
+}
+.footer-logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.2rem; 
+  font-weight: 700; 
+  letter-spacing: 0.2em; 
+  color: var(--blue);
+}
+
+.footer-right {
+  text-align: right;
+}
+.footer-info { 
+  font-size: 0.78rem; 
+  color: var(--text-muted); 
+  line-height: 1.8; 
+}
+.footer-institution-label {
+  font-size: 0.65rem; 
+  font-weight: 600; 
+  letter-spacing: 0.15em;
+  text-transform: uppercase; 
+  color: var(--blue);
+  margin-bottom: 0.3rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  footer { 
+    grid-template-columns: 1fr; /* Se apila en celulares */
+    text-align: center; 
+    gap: 1.25rem;
+  }
+  .footer-left, .footer-right {
+    text-align: center;
+  }
+}
+    /* RESPONSIVE */
+    @media (max-width: 640px) {
+      .nav-burger { display: block; }
+
+      .nav-links {
+        display: none;
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: var(--night);
+        border-bottom: 1px solid var(--border);
+        flex-direction: column;
+        gap: 0;
+        padding: 0.5rem 5% 1rem;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links li { width: 100%; }
+      .nav-links a {
+        display: block;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      footer { flex-direction: column; text-align: center; }
+      .cards-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ==========================================================================
+       REDISEÑO (mismo estilo que la página de pacientes)
+       Usa SOLO los colores del proyecto MOON y sus letras de siempre
+       (Space Grotesk e Inter). Solo cambia el aspecto: no cambia textos ni lógica.
+       ========================================================================== */
+    :root {
+      --ok: #639922;   --ok-text: #9bd15a;   --ok-soft: rgba(99,153,34,0.16);   --ok-line: rgba(99,153,34,0.35);
+      --warn: #EF9F27; --warn-text: #f0b558; --warn-soft: rgba(239,159,39,0.16); --warn-line: rgba(239,159,39,0.35);
+      --crit: #E24B4A; --crit-text: #f18988; --crit-soft: rgba(226,75,74,0.16); --crit-line: rgba(226,75,74,0.35);
+      --shadow: 0 10px 30px -12px rgba(0,0,0,0.6);
+      --radius: 16px;
+      --border-radius-lg: 16px;
+      --border-radius-md: 12px;
+    }
+    body {
+      background: radial-gradient(1200px 600px at 50% -10%, rgba(58,85,153,0.10), transparent 60%), var(--night);
+      -webkit-font-smoothing: antialiased;
+    }
+    nav { border-bottom-color: var(--border); }
+
+    /* Títulos de sección */
+    .section-label { color: var(--blue-light); letter-spacing: 0.18em; }
+    .section-title { font-weight: 700; letter-spacing: -0.01em; }
+    .pm-vitals-title, .pm-diag-title, .pm-ctrl-title {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px; letter-spacing: 0.16em; color: var(--text-muted);
+      margin: 0 0 0.9rem;
+    }
+    .pm-vitals-title::after, .pm-diag-title::after, .pm-ctrl-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Botones */
+    .hero-cta, .contacto-btn.primary {
+      background: linear-gradient(180deg, #3a5599, #243869);
+      border-radius: 10px;
+      box-shadow: 0 8px 20px -8px rgba(58,85,153,0.55);
+    }
+    .hero-cta:hover, .contacto-btn.primary:hover { background: #3a5599; }
+    .contacto-btn.secondary, .pm-sim-btn { border-radius: 999px; }
+    .contacto-btn.secondary { border-radius: 10px; }
+    .hero-cta:focus-visible, .contacto-btn:focus-visible, .pm-sim-btn:focus-visible, .nav-links a:focus-visible {
+      outline: 2px solid #8fa8c8; outline-offset: 2px;
+    }
+
+    /* Tarjetas en general: degradé suave, borde fino y sombra */
+    .feature-card, .component-card, .contrib-card, .crono-item,
+    .pm-controls, .pm-patient, .pm-vital, .pt-fall-card {
+      background: linear-gradient(180deg, var(--card), var(--surface));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .feature-card:hover, .component-card:hover, .contrib-card:hover, .crono-item:hover { border-color: var(--blue-light); }
+    .feature-card { padding: 22px 18px; }
+    .feature-card .card-icon {
+      width: 44px; height: 44px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(58,85,153,0.18); border: 1px solid rgba(58,85,153,0.4);
+    }
+    .component-body { padding: 1.5rem; }
+    .component-name, .contrib-name, .crono-fase { font-weight: 700; }
+    .contrib-card { padding: 1.5rem; }
+    .contrib-avatar, .member-initials { border-radius: 12px; background: linear-gradient(135deg, #3a5599, #243869); border: none; color: var(--white); }
+    .member-pill { background: linear-gradient(180deg, var(--card), var(--surface)); }
+    .crono-item { padding: 1.25rem 1.5rem; }
+    .crono-num {
+      min-width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(58,85,153,0.18); border: 1px solid rgba(58,85,153,0.4);
+      color: #8fa8c8; font-size: 1rem;
+    }
+
+    /* ---- Demo del monitor ---- */
+    .pm-controls { padding: 1.25rem 1.5rem; }
+    .pm-ctrl-row input[type=range] { accent-color: #3a5599; }
+    .pm-ctrl-val { font-family: 'Space Grotesk', sans-serif; font-variant-numeric: tabular-nums; }
+    .pm-disease-pill { padding: 7px 16px; }
+    .pm-disease-pill.active { background: rgba(58,85,153,0.18); color: #8fa8c8; border-color: #3a5599; }
+
+    .pm-patient { padding: 1.1rem 1.25rem; gap: 14px; }
+    .pm-avatar {
+      width: 54px; height: 54px; border-radius: 16px;
+      background: linear-gradient(135deg, #3a5599, #243869); border: none; color: var(--white);
+      font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700;
+    }
+    .pm-patient-name { font-size: 17px; font-weight: 600; }
+    .pm-badge { font-size: 11.5px; padding: 4px 11px; }
+
+    /* Signos vitales: números grandes, ícono y borde según el estado, sin barra */
+    .pm-vitals { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 1.75rem; }
+    .pm-vital {
+      padding: 1.25rem 1.35rem 1.2rem;
+      display: grid; grid-template-columns: 1fr auto;
+      grid-template-areas: "name icon" "val icon" "status status";
+      align-items: start;
+    }
+    .pm-vital.ok { border-color: var(--ok-line); }
+    .pm-vital.warning { border-color: rgba(239,159,39,0.45); }
+    .pm-vital.danger { border-color: rgba(226,75,74,0.6); }
+    .pm-vital-name { grid-area: name; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+    .pm-vital > div:nth-of-type(3) { grid-area: val; }
+    .pm-vital-icon {
+      grid-area: icon; width: 44px; height: 44px; border-radius: 14px; margin: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+      background: rgba(255,255,255,0.04); color: var(--text-muted);
+    }
+    .pm-vital-icon.ok { background: var(--ok-soft); color: var(--ok); }
+    .pm-vital-icon.warning { background: var(--warn-soft); color: var(--warn); }
+    .pm-vital-icon.danger { background: var(--crit-soft); color: var(--crit); }
+    .pm-vital-val {
+      font-family: 'Space Grotesk', sans-serif; font-size: 46px; font-weight: 600;
+      letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+    }
+    .pm-vital-unit { font-size: 14px; margin-left: 2px; }
+    .pm-bar { display: none; }
+    .pm-vital-status { grid-area: status; justify-self: start; margin-top: 12px; font-size: 11.5px; letter-spacing: 0.03em; padding: 4px 11px; }
+    .pm-vital-status:empty { display: none; }
+
+    /* Caídas */
+    .pt-fall-card { padding: 1.15rem 1.25rem; }
+    .pt-fall-icon {
+      width: 46px; height: 46px; border-radius: 14px;
+      background: rgba(58,85,153,0.18); border: 1px solid rgba(58,85,153,0.4); color: #8fa8c8;
+    }
+    .pt-fall-card.is-active { border-color: var(--ok-line); }
+    .pt-fall-card.is-active .pt-fall-icon { background: var(--ok-soft); border-color: var(--ok-line); color: var(--ok); }
+    .pt-fall-card.is-alert .pt-fall-icon { background: var(--crit-soft); border-color: var(--crit-line); color: var(--crit); }
+    .pt-fall-title { font-size: 15px; font-weight: 600; }
+    .pt-fall-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 1rem; }
+    .pt-fall-metrics > div { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; }
+    .pt-fall-metrics b { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-variant-numeric: tabular-nums; }
+    .pt-fall-dismiss { border-radius: 999px; padding: 9px 18px; }
+
+    /* Diagnóstico */
+    .pm-diags { gap: 10px; }
+    .pm-diag {
+      background: linear-gradient(180deg, var(--card), var(--surface));
+      border: 1px solid var(--border); border-left-width: 3px;
+      border-radius: 12px; padding: 14px 16px;
+    }
+    .pm-diag.diag-ok { border-left-color: var(--ok); }
+    .pm-diag.diag-warning { border-left-color: var(--warn); }
+    .pm-diag.diag-danger { border-left-color: var(--crit); }
+    .pm-diag-head { font-weight: 600; }
+
+    @media (max-width: 640px) {
+      .pm-vitals { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .pm-vital { padding: 1rem; grid-template-areas: "name" "val" "status"; grid-template-columns: 1fr; }
+      .pm-vital-icon { display: none; }
+      .pm-vital-name { font-size: 12px; min-height: 2.6em; }
+      .pm-vital-val { font-size: 38px; }
+      .pm-ctrl-label { width: 100%; }
+    }
+    @media (max-width: 360px) { .pm-vitals { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">
+      <img src="logo-glass.png" alt="" class="nav-logo-icon" aria-hidden="true">
+      MOON
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#objetivo">Objetivo</a></li>
+      <li><a href="#monitor">Monitor</a></li>
+      <li><a href="#equipo">Equipo</a></li>
+      <li><a href="https://proyectomoon.github.io/Paciente/">Pacientes</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <button class="nav-burger" id="navBurger" onclick="toggleMobileMenu()" aria-label="Abrir menú">
+      <i class="ti ti-menu-2" aria-hidden="true"></i>
+    </button>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <img src="logo-glass.png" alt="" class="hero-icon-bg" aria-hidden="true">
+    <h1>MOON</h1>
+    <p class="hero-tagline">
+      Pulsera inteligente de monitoreo vital. Detecta caídas, mide signos vitales y alerta a tus contactos de emergencia en tiempo real.
+    </p>
+    <a href="#monitor" class="hero-cta">Ver demo en vivo →</a>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- OBJETIVO -->
+  <section id="objetivo">
+    <p class="section-label">Objetivo</p>
+    <h2 class="section-title">Seguridad para quienes están solos</h2>
+    <p class="objetivo-desc">
+      MOON está diseñado para personas mayores, personas con discapacidad o quienes trabajan solas y no tienen supervisión constante. El dispositivo monitorea en tiempo real y actúa automáticamente ante una emergencia.
+    </p>
+
+    <div class="cards-grid">
+      <div class="feature-card">
+        <i class="ti ti-run card-icon" aria-hidden="true"></i>
+        <p class="card-title">Detección de caídas</p>
+        <p class="card-desc">Detecta automáticamente si el usuario cae y envía una alerta de inmediato.</p>
+      </div>
+      <div class="feature-card">
+        <i class="ti ti-heart-rate-monitor card-icon" aria-hidden="true"></i>
+        <p class="card-title">Frecuencia cardíaca</p>
+        <p class="card-desc">Monitorea el ritmo cardíaco en tiempo real para detectar anomalías.</p>
+      </div>
+      <div class="feature-card">
+        <i class="ti ti-droplet card-icon" aria-hidden="true"></i>
+        <p class="card-title">Oxígeno en sangre</p>
+        <p class="card-desc">Mide el nivel de SpO₂ y alerta ante valores fuera del rango seguro.</p>
+      </div>
+      <div class="feature-card">
+        <i class="ti ti-bell-ringing card-icon" aria-hidden="true"></i>
+        <p class="card-title">Alerta automática</p>
+        <p class="card-desc">El dispositivo activa una alerta de forma automática ante cualquier emergencia detectada.</p>
+      </div>
+      <div class="feature-card">
+        <i class="ti ti-wifi card-icon" aria-hidden="true"></i>
+        <p class="card-title">Notificación WiFi / BT</p>
+        <p class="card-desc">Envía notificaciones vía WiFi o Bluetooth a dispositivos cercanos o remotos.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- MONITOR DE PACIENTE -->
+  <section id="monitor">
+    <p class="section-label">Demo interactiva</p>
+    <h2 class="section-title">Monitor en tiempo real</h2>
+    <p class="section-body" style="margin-bottom: 2.5rem;">
+      Así visualiza MOON los signos vitales del usuario. Simulá distintos escenarios ajustando los valores y seleccionando condiciones preexistentes para ver cómo responde el sistema de diagnóstico automático.
+    </p>
+
+    <div class="pm-root">
+      <div class="pm-controls">
+        <div class="pm-ctrl-title">Ajustar signos vitales</div>
+        <div class="pm-ctrl-row">
+          <span class="pm-ctrl-label"><i class="ti ti-droplet" aria-hidden="true"></i> SpO₂ (%)</span>
+          <input type="range" id="spo2-ctrl" min="80" max="100" step="1" value="97" oninput="update()">
+          <span class="pm-ctrl-val" id="spo2-show">97 %</span>
+        </div>
+        <div class="pm-ctrl-row">
+          <span class="pm-ctrl-label"><i class="ti ti-heart-rate-monitor" aria-hidden="true"></i> BPM</span>
+          <input type="range" id="bpm-ctrl" min="30" max="180" step="1" value="78" oninput="update()">
+          <span class="pm-ctrl-val" id="bpm-show">78 bpm</span>
+        </div>
+      </div>
+
+      <div class="pm-patient">
+        <div class="pm-avatar">JG</div>
+        <div class="pm-patient-info">
+          <div class="pm-patient-name">Juan García</div>
+          <div class="pm-patient-meta">72 años · Masculino · Uso de MOON activo</div>
+        </div>
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:6px;">Enfermedades</div>
+          <div class="pm-badges" id="disease-badges"></div>
+        </div>
+      </div>
+
+      <div class="pm-diseases">
+        <div class="pm-diseases-label">Seleccioná las enfermedades del paciente:</div>
+        <div class="pm-diseases-pills" id="disease-pills"></div>
+      </div>
+
+      <div class="pm-vitals-title">Signos vitales</div>
+      <div class="pm-vitals">
+        <div class="pm-vital" id="card-spo2">
+          <div class="pm-vital-icon" id="icon-spo2"><i class="ti ti-droplet" aria-hidden="true"></i></div>
+          <div class="pm-vital-name">Oxígeno en sangre</div>
+          <div><span class="pm-vital-val" id="val-spo2">97</span><span class="pm-vital-unit"> %</span></div>
+          <div class="pm-bar"><div class="pm-bar-fill" id="bar-spo2" style="width:85%;background:#639922"></div></div>
+          <div class="pm-vital-status" id="status-spo2"></div>
+        </div>
+        <div class="pm-vital" id="card-bpm">
+          <div class="pm-vital-icon" id="icon-bpm"><i class="ti ti-heart-rate-monitor" aria-hidden="true"></i></div>
+          <div class="pm-vital-name">Frecuencia cardíaca</div>
+          <div><span class="pm-vital-val" id="val-bpm">78</span><span class="pm-vital-unit"> bpm</span></div>
+          <div class="pm-bar"><div class="pm-bar-fill" id="bar-bpm" style="width:55%;background:#639922"></div></div>
+          <div class="pm-vital-status" id="status-bpm"></div>
+        </div>
+      </div>
+
+      <div class="pm-vitals-title">Detección de caídas</div>
+      <div class="pt-fall-card" id="fall-card">
+        <div class="pt-fall-head">
+          <div class="pt-fall-icon" id="fall-icon"><i class="ti ti-user-check" aria-hidden="true"></i></div>
+          <div class="pt-fall-info">
+            <div class="pt-fall-title" id="fall-title">Monitoreando</div>
+            <div class="pt-fall-sub" id="fall-sub">Acelerómetro activo</div>
+          </div>
+        </div>
+        <div class="pt-fall-metrics">
+          <div>Aceleración: <b id="fall-g">1.00</b> g</div>
+          <div>Última caída: <b id="fall-last">Ninguna</b></div>
+        </div>
+        <div class="pt-fall-controls">
+          <button type="button" class="pm-sim-btn" id="btn-fall" onclick="simulateFall()"><i class="ti ti-user-down" aria-hidden="true"></i> Simular caída</button>
+          <button type="button" class="pt-fall-dismiss" id="fall-dismiss" onclick="dismissFall()">Estoy bien (falsa alarma)</button>
+        </div>
+      </div>
+
+      <div class="pm-diag-title">Diagnóstico automático</div>
+      <div class="pm-diags" id="diags"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- COMPONENTES -->
+  <section id="componentes">
+    <p class="section-label">Hardware</p>
+    <h2 class="section-title">Componentes del sistema</h2>
+
+    <div class="components-grid">
+      <div class="component-card">
+        <div class="component-body">
+          <div class="component-name">ESP32-C3 SuperMini</div>
+          <div class="component-role">Microcontrolador principal</div>
+          <p class="component-desc">Cerebro del dispositivo. Procesa datos de todos los sensores, toma decisiones y envía alertas por WiFi o Bluetooth.</p>
+        </div>
+      </div>
+      <div class="component-card">
+        <div class="component-body">
+          <div class="component-name">MAX30102</div>
+          <div class="component-role">Sensor de signos vitales</div>
+          <p class="component-desc">Mide frecuencia cardíaca y saturación de oxígeno en sangre mediante emisión de luz roja e infrarroja.</p>
+        </div>
+      </div>
+      <div class="component-card">
+        <div class="component-body">
+          <div class="component-name">MPU6050</div>
+          <div class="component-role">Acelerómetro + Giroscopio</div>
+          <p class="component-desc">Detecta cambios bruscos de movimiento en los ejes X, Y y Z para identificar caídas con precisión.</p>
+        </div>
+      </div>
+      <div class="component-card">
+        <div class="component-body">
+          <div class="component-name">Batería Li-Po + TP4056</div>
+          <div class="component-role">Alimentación</div>
+          <p class="component-desc">Batería liviana recargable por USB. El módulo TP4056 protege contra sobrecargas y prolonga la vida útil.</p>
+        </div>
+      </div>
+      <div class="component-card">
+        <div class="component-body">
+          <div class="component-name">Botón de emergencia</div>
+          <div class="component-role">Alerta manual</div>
+          <p class="component-desc">Permite pedir ayuda manualmente con un solo toque, incluso si el sistema automático no detecta la caída.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- EQUIPO -->
+  <section id="equipo">
+    <p class="section-label">Integrantes</p>
+    <h2 class="section-title">El equipo detrás de MOON</h2>
+
+    <div class="members-list">
+      <div class="member-pill"><span class="member-initials">TM</span> Tomás Morales</div>
+      <div class="member-pill"><span class="member-initials">PL</span> Patricio Luna</div>
+      <div class="member-pill"><span class="member-initials">ER</span> Ezequiel Ríos Cabral</div>
+      <div class="member-pill"><span class="member-initials">FA</span> Federico Addona</div>
+      <div class="member-pill"><span class="member-initials">LT</span> Lucas Torrico</div>
+    </div>
+
+    <p class="section-label" style="margin-top: 3rem;">Contribuciones</p>
+    <div class="contrib-grid">
+      <div class="contrib-card">
+        <div class="contrib-header">
+          <span class="contrib-avatar">TM</span>
+          <div>
+            <div class="contrib-name">Tomás Morales</div>
+            <div class="contrib-role">Microcontroladores y Arquitectura de Sistema</div>
+          </div>
+        </div>
+        <p class="contrib-desc">Gestión del ESP32-C3 SuperMini, lógica de datos en tiempo real y comunicaciones inalámbricas para el envío de alertas.</p>
+      </div>
+      <div class="contrib-card">
+        <div class="contrib-header">
+          <span class="contrib-avatar">PL</span>
+          <div>
+            <div class="contrib-name">Patricio Luna</div>
+            <div class="contrib-role">Monitoreo de Signos Vitales y Biometría</div>
+          </div>
+        </div>
+        <p class="contrib-desc">Implementación del sensor MAX30102 para la medición precisa de la frecuencia cardíaca (BPM) y oxígeno en sangre (SpO₂).</p>
+      </div>
+      <div class="contrib-card">
+        <div class="contrib-header">
+          <span class="contrib-avatar">ER</span>
+          <div>
+            <div class="contrib-name">Ezequiel Ríos Cabral</div>
+            <div class="contrib-role">Hardware y Soluciones de Energía</div>
+          </div>
+        </div>
+        <p class="contrib-desc">Encargado de la alimentación del dispositivo mediante baterías Li-Po y del diseño ergonómico de la carcasa compacta.</p>
+      </div>
+      <div class="contrib-card">
+        <div class="contrib-header">
+          <span class="contrib-avatar">FA</span>
+          <div>
+            <div class="contrib-name">Federico Addona</div>
+            <div class="contrib-role">Cinemática y Detección de Eventos de Riesgo</div>
+          </div>
+        </div>
+        <p class="contrib-desc">Programación del módulo MPU6050 (acelerómetro y giroscopio) y algoritmos autónomos de detección de caídas.</p>
+      </div>
+      <div class="contrib-card">
+        <div class="contrib-header">
+          <span class="contrib-avatar">LT</span>
+          <div>
+            <div class="contrib-name">Lucas Torrico</div>
+            <div class="contrib-role">Comunicaciones y Sistemas de Alerta</div>
+          </div>
+        </div>
+        <p class="contrib-desc">Desarrollo de la lógica de alertas automáticas y del botón de emergencia para la notificación inmediata al contacto.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- CRONOGRAMA -->
+  <section id="cronograma">
+    <p class="section-label">Cronograma</p>
+    <h2 class="section-title">Plan de desarrollo</h2>
+    <p class="section-body">Etapas del proyecto desde el diseño hasta la presentación final.</p>
+
+    <div class="cronograma-list">
+      <div class="crono-item">
+        <span class="crono-num">01</span>
+        <div class="crono-text">
+          <div class="crono-fase">Relevamiento y diseño</div>
+          <p class="crono-desc">Definición de requerimientos, selección de componentes y diseño del circuito.</p>
+        </div>
+      </div>
+      <div class="crono-item">
+        <span class="crono-num">02</span>
+        <div class="crono-text">
+          <div class="crono-fase">Integración de hardware</div>
+          <p class="crono-desc">Montaje del ESP32-C3, sensores MAX30102, MPU6050 y módulo de carga.</p>
+        </div>
+      </div>
+      <div class="crono-item">
+        <span class="crono-num">03</span>
+        <div class="crono-text">
+          <div class="crono-fase">Desarrollo de firmware</div>
+          <p class="crono-desc">Programación de la lógica de detección de caídas, lectura de signos vitales y envío de alertas.</p>
+        </div>
+      </div>
+      <div class="crono-item">
+        <span class="crono-num">04</span>
+        <div class="crono-text">
+          <div class="crono-fase">Pruebas y ajustes</div>
+          <p class="crono-desc">Validación del sistema completo, calibración de umbrales y corrección de errores.</p>
+        </div>
+      </div>
+      <div class="crono-item">
+        <span class="crono-num">05</span>
+        <div class="crono-text">
+          <div class="crono-fase">Presentación final</div>
+          <p class="crono-desc">Exposición del prototipo funcional ante el tribunal evaluador de Prácticas Profesionalizantes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section id="contacto">
+    <p class="section-label">¿Querés saber más?</p>
+    <h2 class="section-title">Conocé MOON de cerca</h2>
+    <p class="section-body">
+      Si querés ver el prototipo en persona, sumarte al proyecto o simplemente tenés preguntas, escribinos.
+    </p>
+    <div class="contacto-actions">
+      <a href="mailto:proyectomoon2026@gmail.com" class="contacto-btn primary">
+        <i class="ti ti-mail" aria-hidden="true"></i> Escribinos
+      </a>
+      <a href="https://www.instagram.com/proyectomoon2026/" target="_blank" rel="noopener noreferrer" class="contacto-btn secondary">
+        <i class="ti ti-brand-instagram" aria-hidden="true"></i> Seguinos
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+  <div class="footer-left">
+    <span class="footer-logo">MOON</span>
+  </div>
+
+  <div class="footer-right">
+    <div class="footer-info">
+      <div class="footer-institution-label">Institución</div>
+      Escuela de Educación Técnica N°7<br>
+      Taller Regional Quilmes · Especialidad Aviónica<br>
+    </div>
+  </div>
+</footer>
+
+  <script>
+    const diseases = [
+      { id: 'hta', label: 'Hipertensión', badge: 'pm-badge-warn' },
+      { id: 'diabetes', label: 'Diabetes', badge: 'pm-badge-warn' },
+      { id: 'epoc', label: 'EPOC', badge: 'pm-badge-danger' },
+      { id: 'arritmia', label: 'Arritmia', badge: 'pm-badge-danger' },
+      { id: 'asma', label: 'Asma', badge: 'pm-badge-warn' },
+      { id: 'anemia', label: 'Anemia', badge: 'pm-badge-info' },
+    ];
+    let active = new Set(['hta', 'epoc']);
+
+    function renderDiseases() {
+      const pillsEl = document.getElementById('disease-pills');
+      const badgesEl = document.getElementById('disease-badges');
+      pillsEl.innerHTML = diseases.map(d =>
+        `<span class="pm-disease-pill ${active.has(d.id)?'active':''}" onclick="toggleDis('${d.id}')">${d.label}</span>`
+      ).join('');
+      badgesEl.innerHTML = [...active].map(id => {
+        const d = diseases.find(x=>x.id===id);
+        return d ? `<span class="pm-badge ${d.badge}">${d.label}</span>` : '';
+      }).join('');
+    }
+
+    function toggleDis(id) {
+      active.has(id) ? active.delete(id) : active.add(id);
+      renderDiseases();
+      update();
+    }
+
+    function update() {
+      const spo2 = parseFloat(document.getElementById('spo2-ctrl').value);
+      const bpm = parseInt(document.getElementById('bpm-ctrl').value);
+
+      document.getElementById('spo2-show').textContent = spo2 + ' %';
+      document.getElementById('bpm-show').textContent = bpm + ' bpm';
+      document.getElementById('val-spo2').textContent = spo2;
+      document.getElementById('val-bpm').textContent = bpm;
+
+      let spo2State, bpmState;
+      if (spo2 < 90) spo2State = 'danger';
+      else if (spo2 < 95) spo2State = 'warning';
+      else spo2State = 'ok';
+
+      const hasArritmia = active.has('arritmia');
+      if (bpm < 50 || bpm > 120) bpmState = 'danger';
+      else if (bpm < 60 || bpm > 100 || hasArritmia) bpmState = 'warning';
+      else bpmState = 'ok';
+
+      const col = s => s==='ok' ? '#639922' : s==='warning' ? '#EF9F27' : '#E24B4A';
+      setVital('spo2', spo2State, ((spo2-80)/20)*100, col(spo2State));
+      setVital('bpm', bpmState, Math.min(((bpm-30)/150)*100,100), col(bpmState));
+
+      buildDiags(spo2, spo2State, bpm, bpmState);
+    }
+
+    function setVital(id, state, pct, color) {
+      const card = document.getElementById('card-'+id);
+      const icon = document.getElementById('icon-'+id);
+      const bar = document.getElementById('bar-'+id);
+      const statusEl = document.getElementById('status-'+id);
+      card.className = 'pm-vital ' + state;
+      icon.className = 'pm-vital-icon ' + state;
+      bar.style.width = Math.round(pct) + '%';
+      bar.style.background = color;
+      const labels = {
+        spo2: { ok:'Normal', warning:'Bajo', danger:'Crítico' },
+        bpm: { ok:'Normal', warning:'Irregular', danger:'Crítico' }
+      };
+      statusEl.textContent = labels[id][state];
+      statusEl.className = 'pm-vital-status status-'+state;
+    }
+
+    function buildDiags(spo2, s0, bpm, sb) {
+      const diags = [];
+
+      if (fallState === 'alert') {
+        diags.push({ cls:'danger', icon:'ti-alert-triangle', title:'Caída detectada', body:'El paciente no se movió después del impacto. Se envía una alerta automática a los contactos de emergencia.' });
+      }
+
+      if (s0 === 'danger') {
+        const msg = active.has('epoc') || active.has('asma')
+          ? `SpO₂ ${spo2}%. En pacientes con EPOC/Asma, esto representa insuficiencia respiratoria severa.`
+          : `SpO₂ ${spo2}%. Hipoxemia grave. Requiere oxígeno suplementario de emergencia.`;
+        diags.push({ cls:'danger', icon:'ti-urgent', title:'Hipoxemia grave', body: msg });
+      } else if (s0 === 'warning') {
+        const msg = active.has('anemia')
+          ? `SpO₂ ${spo2}%. En pacientes con anemia, la capacidad de transporte de O₂ ya está comprometida. Monitorear.`
+          : `SpO₂ ${spo2}%. Saturación baja. Asegurarse de que el sensor esté bien colocado y observar evolución.`;
+        diags.push({ cls:'warning', icon:'ti-droplet', title:'Saturación baja', body: msg });
+      } else {
+        diags.push({ cls:'ok', icon:'ti-droplet', title:'Oxigenación normal', body:`SpO₂ ${spo2}%, dentro del rango seguro (95–100%).` });
+      }
+
+      if (sb === 'danger') {
+        if (bpm > 120) diags.push({ cls:'danger', icon:'ti-heart-off', title:'Taquicardia severa', body:`Frecuencia cardíaca de ${bpm} bpm. Riesgo de fallo cardíaco. Actuar de inmediato.` });
+        else diags.push({ cls:'danger', icon:'ti-heart-off', title:'Bradicardia severa', body:`Frecuencia cardíaca de ${bpm} bpm. El corazón no bombea suficiente sangre. Atención urgente.` });
+      } else if (sb === 'warning') {
+        const msg = active.has('arritmia')
+          ? `BPM: ${bpm}. En pacientes con arritmia, cualquier variación fuera del rango habitual requiere atención.`
+          : active.has('hta')
+            ? `BPM: ${bpm}. En pacientes con hipertensión, la frecuencia elevada aumenta el riesgo cardiovascular.`
+            : `Frecuencia cardíaca de ${bpm} bpm. Levemente fuera del rango ideal (60–100 bpm). Monitorear.`;
+        diags.push({ cls:'warning', icon:'ti-heart-rate-monitor', title:'Frecuencia irregular', body: msg });
+      } else {
+        diags.push({ cls:'ok', icon:'ti-heart-rate-monitor', title:'Ritmo cardíaco normal', body:`Frecuencia de ${bpm} bpm dentro del rango normal.` });
+      }
+
+      if (active.has('epoc') && spo2 < 95) {
+        diags.push({ cls:'warning', icon:'ti-lungs', title:'Alerta EPOC', body:'La SpO₂ baja combinada con EPOC indica posible exacerbación. Evaluar broncodilatador.' });
+      }
+      if (active.has('hta') && bpm > 100) {
+        diags.push({ cls:'warning', icon:'ti-gauge', title:'Alerta Hipertensión', body:'La taquicardia en pacientes hipertensos puede indicar crisis hipertensiva. Medir presión arterial.' });
+      }
+
+      document.getElementById('diags').innerHTML = diags.map(d =>
+        `<div class="pm-diag diag-${d.cls}">
+          <i class="ti ${d.icon} pm-diag-icon ${d.cls}" aria-hidden="true"></i>
+          <div>
+            <div class="pm-diag-head">${d.title}</div>
+            <div class="pm-diag-body">${d.body}</div>
+          </div>
+        </div>`
+      ).join('');
+    }
+
+    /* ---- Simulador de caídas ---- */
+    let fallState = 'idle'; // 'idle' | 'impact' | 'alert'
+    let fallTick = null, fallTimer = null;
+    const FALL_SIM_MS = 3000;
+
+    function fallUI(mode, title, sub) {
+      const card = document.getElementById('fall-card');
+      const icon = document.getElementById('fall-icon');
+      card.classList.remove('is-active', 'is-alert');
+      document.getElementById('fall-dismiss').style.display = 'none';
+      if (mode === 'alert') {
+        card.classList.add('is-alert');
+        icon.innerHTML = '<i class="ti ti-alert-triangle" aria-hidden="true"></i>';
+        document.getElementById('fall-dismiss').style.display = 'inline-block';
+      } else {
+        card.classList.add('is-active');
+        icon.innerHTML = '<i class="ti ti-user-check" aria-hidden="true"></i>';
+      }
+      document.getElementById('fall-title').textContent = title;
+      document.getElementById('fall-sub').textContent = sub;
+    }
+
+    function setFallButtons(disabled) {
+      document.getElementById('btn-fall').disabled = disabled;
+    }
+
+    function showG(g) { document.getElementById('fall-g').textContent = g.toFixed(2); }
+
+    function runImpact(onEnd) {
+      if (fallState !== 'idle') return;
+      fallState = 'impact';
+      setFallButtons(true);
+      showG(5.0);
+      fallUI('active', 'Impacto detectado', 'Verificando si la persona se levanta...');
+      fallTick = setInterval(() => {
+        showG(1 + (Math.random() - 0.5) * 0.1);
+      }, 200);
+      fallTimer = setTimeout(() => { clearInterval(fallTick); onEnd(); }, FALL_SIM_MS);
+    }
+
+    function simulateFall() {
+      runImpact(() => {
+        fallState = 'alert';
+        showG(1.0);
+        const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('fall-last').textContent = 'Hoy ' + hora;
+        fallUI('alert', '¡Caída detectada!', 'El paciente no se movió después del impacto');
+        update();
+      });
+    }
+
+    function dismissFall() {
+      fallState = 'idle';
+      showG(1.0);
+      fallUI('active', 'Monitoreando', 'Acelerómetro activo');
+      setFallButtons(false);
+      update();
+    }
+
+    // Menú hamburguesa (celular)
+    function toggleMobileMenu() {
+      document.getElementById('navLinks').classList.toggle('open');
+    }
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', () => {
+        document.getElementById('navLinks').classList.remove('open');
+      });
+    });
+
+    renderDiseases();
+    fallUI('active', 'Monitoreando', 'Acelerómetro activo');
+    update();
+
+    // Highlight sutil al navegar desde el CTA del hero
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', () => {
+        const id = link.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (!target) return;
+        target.classList.add('pm-highlight');
+        setTimeout(() => target.classList.remove('pm-highlight'), 900);
+      });
+    });
+  </script>
+
+</body>
+</html>
