@@ -158,7 +158,7 @@
 
     /* CTA FINAL */
     #contacto {
-      background: var(--night);
+      background: var(--deep);
       text-align: center;
       display: flex; flex-direction: column; align-items: center;
     }
@@ -336,7 +336,7 @@
     }
 
     /* COMPONENTES */
-    #componentes { background: var(--deep); }
+    #componentes { background: var(--night); }
     .components-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -361,7 +361,7 @@
     .component-desc { font-size: 0.83rem; color: var(--text-muted); line-height: 1.6; }
 
     /* EQUIPO */
-    #equipo { background: var(--night); }
+    #equipo { background: var(--deep); }
 
     .members-list {
       display: flex; flex-wrap: wrap; gap: 0.75rem;
@@ -419,7 +419,7 @@
     .contrib-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
 
     /* CRONOGRAMA */
-    #cronograma { background: var(--deep); }
+    #cronograma { background: var(--night); }
     .cronograma-list {
       display: flex;
       flex-direction: column;
@@ -692,7 +692,6 @@ footer {
     </a>
     <ul class="nav-links" id="navLinks">
       <li><a href="#objetivo">Objetivo</a></li>
-      <li><a href="#monitor">Monitor</a></li>
       <li><a href="#equipo">Equipo</a></li>
       <li><a href="https://proyectomoon.github.io/Paciente/">Pacientes</a></li>
       <li><a href="#contacto">Contacto</a></li>
@@ -709,7 +708,7 @@ footer {
     <p class="hero-tagline">
       Pulsera inteligente de monitoreo vital. Detecta caídas, mide signos vitales y alerta a tus contactos de emergencia en tiempo real.
     </p>
-    <a href="#monitor" class="hero-cta">Ver demo en vivo →</a>
+    <a href="https://proyectomoon.github.io/TestPaciente/" class="hero-cta">Probar simulador →</a>
   </section>
 
   <div class="divider"></div>
@@ -748,90 +747,6 @@ footer {
         <p class="card-title">Notificación WiFi / BT</p>
         <p class="card-desc">Envía notificaciones vía WiFi o Bluetooth a dispositivos cercanos o remotos.</p>
       </div>
-    </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- MONITOR DE PACIENTE -->
-  <section id="monitor">
-    <p class="section-label">Demo interactiva</p>
-    <h2 class="section-title">Monitor en tiempo real</h2>
-    <p class="section-body" style="margin-bottom: 2.5rem;">
-      Así visualiza MOON los signos vitales del usuario. Simulá distintos escenarios ajustando los valores y seleccionando condiciones preexistentes para ver cómo responde el sistema de diagnóstico automático.
-    </p>
-
-    <div class="pm-root">
-      <div class="pm-controls">
-        <div class="pm-ctrl-title">Ajustar signos vitales</div>
-        <div class="pm-ctrl-row">
-          <span class="pm-ctrl-label"><i class="ti ti-droplet" aria-hidden="true"></i> SpO₂ (%)</span>
-          <input type="range" id="spo2-ctrl" min="80" max="100" step="1" value="97" oninput="update()">
-          <span class="pm-ctrl-val" id="spo2-show">97 %</span>
-        </div>
-        <div class="pm-ctrl-row">
-          <span class="pm-ctrl-label"><i class="ti ti-heart-rate-monitor" aria-hidden="true"></i> BPM</span>
-          <input type="range" id="bpm-ctrl" min="30" max="180" step="1" value="78" oninput="update()">
-          <span class="pm-ctrl-val" id="bpm-show">78 bpm</span>
-        </div>
-      </div>
-
-      <div class="pm-patient">
-        <div class="pm-avatar">JG</div>
-        <div class="pm-patient-info">
-          <div class="pm-patient-name">Juan García</div>
-          <div class="pm-patient-meta">72 años · Masculino · Uso de MOON activo</div>
-        </div>
-        <div>
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted);margin-bottom:6px;">Enfermedades</div>
-          <div class="pm-badges" id="disease-badges"></div>
-        </div>
-      </div>
-
-      <div class="pm-diseases">
-        <div class="pm-diseases-label">Seleccioná las enfermedades del paciente:</div>
-        <div class="pm-diseases-pills" id="disease-pills"></div>
-      </div>
-
-      <div class="pm-vitals-title">Signos vitales</div>
-      <div class="pm-vitals">
-        <div class="pm-vital" id="card-spo2">
-          <div class="pm-vital-icon" id="icon-spo2"><i class="ti ti-droplet" aria-hidden="true"></i></div>
-          <div class="pm-vital-name">Oxígeno en sangre</div>
-          <div><span class="pm-vital-val" id="val-spo2">97</span><span class="pm-vital-unit"> %</span></div>
-          <div class="pm-bar"><div class="pm-bar-fill" id="bar-spo2" style="width:85%;background:#639922"></div></div>
-          <div class="pm-vital-status" id="status-spo2"></div>
-        </div>
-        <div class="pm-vital" id="card-bpm">
-          <div class="pm-vital-icon" id="icon-bpm"><i class="ti ti-heart-rate-monitor" aria-hidden="true"></i></div>
-          <div class="pm-vital-name">Frecuencia cardíaca</div>
-          <div><span class="pm-vital-val" id="val-bpm">78</span><span class="pm-vital-unit"> bpm</span></div>
-          <div class="pm-bar"><div class="pm-bar-fill" id="bar-bpm" style="width:55%;background:#639922"></div></div>
-          <div class="pm-vital-status" id="status-bpm"></div>
-        </div>
-      </div>
-
-      <div class="pm-vitals-title">Detección de caídas</div>
-      <div class="pt-fall-card" id="fall-card">
-        <div class="pt-fall-head">
-          <div class="pt-fall-icon" id="fall-icon"><i class="ti ti-user-check" aria-hidden="true"></i></div>
-          <div class="pt-fall-info">
-            <div class="pt-fall-title" id="fall-title">Monitoreando</div>
-            <div class="pt-fall-sub" id="fall-sub">Acelerómetro activo</div>
-          </div>
-        </div>
-        <div class="pt-fall-metrics">
-          <div>Aceleración: <b id="fall-g">1.00</b> g</div>
-          <div>Última caída: <b id="fall-last">Ninguna</b></div>
-        </div>
-        <div class="pt-fall-controls">
-          <button type="button" class="pm-sim-btn" id="btn-fall" onclick="simulateFall()"><i class="ti ti-user-down" aria-hidden="true"></i> Simular caída</button>
-          <button type="button" class="pt-fall-dismiss" id="fall-dismiss" onclick="dismissFall()">Estoy bien (falsa alarma)</button>
-        </div>
-      </div>
-
-      <div class="pm-diag-title">Diagnóstico automático</div>
-      <div class="pm-diags" id="diags"></div>
     </div>
   </section>
 
@@ -1031,189 +946,6 @@ footer {
 </footer>
 
   <script>
-    const diseases = [
-      { id: 'hta', label: 'Hipertensión', badge: 'pm-badge-warn' },
-      { id: 'diabetes', label: 'Diabetes', badge: 'pm-badge-warn' },
-      { id: 'epoc', label: 'EPOC', badge: 'pm-badge-danger' },
-      { id: 'arritmia', label: 'Arritmia', badge: 'pm-badge-danger' },
-      { id: 'asma', label: 'Asma', badge: 'pm-badge-warn' },
-      { id: 'anemia', label: 'Anemia', badge: 'pm-badge-info' },
-    ];
-    let active = new Set(['hta', 'epoc']);
-
-    function renderDiseases() {
-      const pillsEl = document.getElementById('disease-pills');
-      const badgesEl = document.getElementById('disease-badges');
-      pillsEl.innerHTML = diseases.map(d =>
-        `<span class="pm-disease-pill ${active.has(d.id)?'active':''}" onclick="toggleDis('${d.id}')">${d.label}</span>`
-      ).join('');
-      badgesEl.innerHTML = [...active].map(id => {
-        const d = diseases.find(x=>x.id===id);
-        return d ? `<span class="pm-badge ${d.badge}">${d.label}</span>` : '';
-      }).join('');
-    }
-
-    function toggleDis(id) {
-      active.has(id) ? active.delete(id) : active.add(id);
-      renderDiseases();
-      update();
-    }
-
-    function update() {
-      const spo2 = parseFloat(document.getElementById('spo2-ctrl').value);
-      const bpm = parseInt(document.getElementById('bpm-ctrl').value);
-
-      document.getElementById('spo2-show').textContent = spo2 + ' %';
-      document.getElementById('bpm-show').textContent = bpm + ' bpm';
-      document.getElementById('val-spo2').textContent = spo2;
-      document.getElementById('val-bpm').textContent = bpm;
-
-      let spo2State, bpmState;
-      if (spo2 < 90) spo2State = 'danger';
-      else if (spo2 < 95) spo2State = 'warning';
-      else spo2State = 'ok';
-
-      const hasArritmia = active.has('arritmia');
-      if (bpm < 50 || bpm > 120) bpmState = 'danger';
-      else if (bpm < 60 || bpm > 100 || hasArritmia) bpmState = 'warning';
-      else bpmState = 'ok';
-
-      const col = s => s==='ok' ? '#639922' : s==='warning' ? '#EF9F27' : '#E24B4A';
-      setVital('spo2', spo2State, ((spo2-80)/20)*100, col(spo2State));
-      setVital('bpm', bpmState, Math.min(((bpm-30)/150)*100,100), col(bpmState));
-
-      buildDiags(spo2, spo2State, bpm, bpmState);
-    }
-
-    function setVital(id, state, pct, color) {
-      const card = document.getElementById('card-'+id);
-      const icon = document.getElementById('icon-'+id);
-      const bar = document.getElementById('bar-'+id);
-      const statusEl = document.getElementById('status-'+id);
-      card.className = 'pm-vital ' + state;
-      icon.className = 'pm-vital-icon ' + state;
-      bar.style.width = Math.round(pct) + '%';
-      bar.style.background = color;
-      const labels = {
-        spo2: { ok:'Normal', warning:'Bajo', danger:'Crítico' },
-        bpm: { ok:'Normal', warning:'Irregular', danger:'Crítico' }
-      };
-      statusEl.textContent = labels[id][state];
-      statusEl.className = 'pm-vital-status status-'+state;
-    }
-
-    function buildDiags(spo2, s0, bpm, sb) {
-      const diags = [];
-
-      if (fallState === 'alert') {
-        diags.push({ cls:'danger', icon:'ti-alert-triangle', title:'Caída detectada', body:'El paciente no se movió después del impacto. Se envía una alerta automática a los contactos de emergencia.' });
-      }
-
-      if (s0 === 'danger') {
-        const msg = active.has('epoc') || active.has('asma')
-          ? `SpO₂ ${spo2}%. En pacientes con EPOC/Asma, esto representa insuficiencia respiratoria severa.`
-          : `SpO₂ ${spo2}%. Hipoxemia grave. Requiere oxígeno suplementario de emergencia.`;
-        diags.push({ cls:'danger', icon:'ti-urgent', title:'Hipoxemia grave', body: msg });
-      } else if (s0 === 'warning') {
-        const msg = active.has('anemia')
-          ? `SpO₂ ${spo2}%. En pacientes con anemia, la capacidad de transporte de O₂ ya está comprometida. Monitorear.`
-          : `SpO₂ ${spo2}%. Saturación baja. Asegurarse de que el sensor esté bien colocado y observar evolución.`;
-        diags.push({ cls:'warning', icon:'ti-droplet', title:'Saturación baja', body: msg });
-      } else {
-        diags.push({ cls:'ok', icon:'ti-droplet', title:'Oxigenación normal', body:`SpO₂ ${spo2}%, dentro del rango seguro (95–100%).` });
-      }
-
-      if (sb === 'danger') {
-        if (bpm > 120) diags.push({ cls:'danger', icon:'ti-heart-off', title:'Taquicardia severa', body:`Frecuencia cardíaca de ${bpm} bpm. Riesgo de fallo cardíaco. Actuar de inmediato.` });
-        else diags.push({ cls:'danger', icon:'ti-heart-off', title:'Bradicardia severa', body:`Frecuencia cardíaca de ${bpm} bpm. El corazón no bombea suficiente sangre. Atención urgente.` });
-      } else if (sb === 'warning') {
-        const msg = active.has('arritmia')
-          ? `BPM: ${bpm}. En pacientes con arritmia, cualquier variación fuera del rango habitual requiere atención.`
-          : active.has('hta')
-            ? `BPM: ${bpm}. En pacientes con hipertensión, la frecuencia elevada aumenta el riesgo cardiovascular.`
-            : `Frecuencia cardíaca de ${bpm} bpm. Levemente fuera del rango ideal (60–100 bpm). Monitorear.`;
-        diags.push({ cls:'warning', icon:'ti-heart-rate-monitor', title:'Frecuencia irregular', body: msg });
-      } else {
-        diags.push({ cls:'ok', icon:'ti-heart-rate-monitor', title:'Ritmo cardíaco normal', body:`Frecuencia de ${bpm} bpm dentro del rango normal.` });
-      }
-
-      if (active.has('epoc') && spo2 < 95) {
-        diags.push({ cls:'warning', icon:'ti-lungs', title:'Alerta EPOC', body:'La SpO₂ baja combinada con EPOC indica posible exacerbación. Evaluar broncodilatador.' });
-      }
-      if (active.has('hta') && bpm > 100) {
-        diags.push({ cls:'warning', icon:'ti-gauge', title:'Alerta Hipertensión', body:'La taquicardia en pacientes hipertensos puede indicar crisis hipertensiva. Medir presión arterial.' });
-      }
-
-      document.getElementById('diags').innerHTML = diags.map(d =>
-        `<div class="pm-diag diag-${d.cls}">
-          <i class="ti ${d.icon} pm-diag-icon ${d.cls}" aria-hidden="true"></i>
-          <div>
-            <div class="pm-diag-head">${d.title}</div>
-            <div class="pm-diag-body">${d.body}</div>
-          </div>
-        </div>`
-      ).join('');
-    }
-
-    /* ---- Simulador de caídas ---- */
-    let fallState = 'idle'; // 'idle' | 'impact' | 'alert'
-    let fallTick = null, fallTimer = null;
-    const FALL_SIM_MS = 3000;
-
-    function fallUI(mode, title, sub) {
-      const card = document.getElementById('fall-card');
-      const icon = document.getElementById('fall-icon');
-      card.classList.remove('is-active', 'is-alert');
-      document.getElementById('fall-dismiss').style.display = 'none';
-      if (mode === 'alert') {
-        card.classList.add('is-alert');
-        icon.innerHTML = '<i class="ti ti-alert-triangle" aria-hidden="true"></i>';
-        document.getElementById('fall-dismiss').style.display = 'inline-block';
-      } else {
-        card.classList.add('is-active');
-        icon.innerHTML = '<i class="ti ti-user-check" aria-hidden="true"></i>';
-      }
-      document.getElementById('fall-title').textContent = title;
-      document.getElementById('fall-sub').textContent = sub;
-    }
-
-    function setFallButtons(disabled) {
-      document.getElementById('btn-fall').disabled = disabled;
-    }
-
-    function showG(g) { document.getElementById('fall-g').textContent = g.toFixed(2); }
-
-    function runImpact(onEnd) {
-      if (fallState !== 'idle') return;
-      fallState = 'impact';
-      setFallButtons(true);
-      showG(5.0);
-      fallUI('active', 'Impacto detectado', 'Verificando si la persona se levanta...');
-      fallTick = setInterval(() => {
-        showG(1 + (Math.random() - 0.5) * 0.1);
-      }, 200);
-      fallTimer = setTimeout(() => { clearInterval(fallTick); onEnd(); }, FALL_SIM_MS);
-    }
-
-    function simulateFall() {
-      runImpact(() => {
-        fallState = 'alert';
-        showG(1.0);
-        const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-        document.getElementById('fall-last').textContent = 'Hoy ' + hora;
-        fallUI('alert', '¡Caída detectada!', 'El paciente no se movió después del impacto');
-        update();
-      });
-    }
-
-    function dismissFall() {
-      fallState = 'idle';
-      showG(1.0);
-      fallUI('active', 'Monitoreando', 'Acelerómetro activo');
-      setFallButtons(false);
-      update();
-    }
-
     // Menú hamburguesa (celular)
     function toggleMobileMenu() {
       document.getElementById('navLinks').classList.toggle('open');
@@ -1223,10 +955,6 @@ footer {
         document.getElementById('navLinks').classList.remove('open');
       });
     });
-
-    renderDiseases();
-    fallUI('active', 'Monitoreando', 'Acelerómetro activo');
-    update();
 
     // Highlight sutil al navegar desde el CTA del hero
     document.querySelectorAll('a[href^="#"]').forEach(link => {
