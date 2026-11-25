@@ -878,6 +878,23 @@
             <div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.4rem;">Si lo dejás vacío, las alertas llegan al email de tu cuenta.</div>
           </div>
 
+          <div class="pt-field pt-field-full">
+            <label for="pt-pNtfy">Canal de alertas al celular (app ntfy, gratis)</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <input type="text" id="pt-pNtfy" placeholder="Ej: moon-ana-k7f3x9q2" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" oninput="ptNtfyAyuda()" style="flex:1;min-width:180px;">
+              <button type="button" class="pt-ghost-btn" onclick="ptNtfyGenerar()"><i class="ti ti-refresh"></i> Generar</button>
+              <button type="button" class="pt-ghost-btn" onclick="ptNtfyPrueba(this)"><i class="ti ti-bell-ringing"></i> Probar</button>
+            </div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.4rem;">El familiar instala la app <b>ntfy</b> (Play Store / App Store), toca <b>+</b> y se suscribe a este canal. Ante una caída o un valor crítico le suena una alerta urgente. Tocá <b>Generar</b> para crear un nombre difícil de adivinar. Si lo dejás vacío, no se mandan notificaciones.</div>
+            <div id="pt-ntfy-link" style="font-size:0.72rem;color:var(--text-muted);margin-top:0.4rem;word-break:break-all;"></div>
+          </div>
+
+          <div class="pt-field pt-field-full">
+            <label for="pt-pAlertPhone">Teléfono de emergencia (recibe una llamada automática)</label>
+            <input type="tel" id="pt-pAlertPhone" placeholder="Ej: +5491112345678" autocomplete="off" inputmode="tel">
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:0.4rem;">Con código de país: +54 9 + código de área + número para celulares de Argentina. Mientras Twilio esté en modo prueba, el número tiene que estar verificado en Twilio. Si lo dejás vacío, no se hacen llamadas.</div>
+          </div>
+
           <button type="submit" class="pt-btn" style="margin-top:1.6rem;">Guardar y ver panel del paciente</button>
         </form>
       </div>
@@ -910,7 +927,7 @@
         <button class="pt-ble-action" id="pt-ble-btn" onclick="ptConnectBluetooth()">
           <i class="ti ti-bluetooth" aria-hidden="true"></i> Conectar
         </button>
-        <div class="pt-ble-hint" id="pt-ble-hint">Elegí tu dispositivo de la lista</div>
+        <div class="pt-ble-hint" id="pt-ble-hint">Elegí tu pulsera MOON de la lista</div>
         <!-- Se muestra solo si el navegador no puede usar Bluetooth (iPhone, Safari, Firefox...) -->
         <div class="pt-ble-help" id="pt-ble-help"></div>
       </div>
@@ -970,6 +987,9 @@
             <button type="button" class="pt-fall-dismiss" id="pt-fall-dismiss" onclick="ptDismissFall()">Estoy bien (falsa alarma)</button>
           </div>
           <div class="pt-fall-sub" id="pt-mail-status" style="display:none;margin-top:0.8rem;"></div>
+          <div class="pt-fall-sub" id="pt-ntfy-status" style="display:none;margin-top:0.4rem;"></div>
+          <div class="pt-fall-sub" id="pt-call-status" style="display:none;margin-top:0.4rem;"></div>
+          <button type="button" class="pt-ghost-btn" id="pt-ntfy-btn" onclick="ptPedirAyuda()" style="margin-top:0.8rem;"><i class="ti ti-phone-call"></i> Pedir ayuda a mi familiar</button>
         </div>
 
         </div>
@@ -1369,6 +1389,8 @@
       const ptCuenta = ptSess ? ptSess.email : '';
       if (existing) {
         document.getElementById('pt-pAlertEmail').value = existing.alertEmail || ptCuenta;
+        document.getElementById('pt-pNtfy').value = existing.alertNtfy || '';
+        document.getElementById('pt-pAlertPhone').value = existing.alertPhone || '';
         document.getElementById('pt-pName').value = existing.name || '';
         document.getElementById('pt-pAge').value = existing.age || '';
         document.getElementById('pt-pGender').value = existing.gender || '';
@@ -1376,13 +1398,16 @@
       } else {
         document.getElementById('pt-setupForm').reset();
         document.getElementById('pt-pAlertEmail').value = ptCuenta;
+        document.getElementById('pt-pNtfy').value = '';
+        document.getElementById('pt-pAlertPhone').value = '';
       }
+      ptNtfyAyuda();
     }
 
     function ptShowPanel(profile) {
       ptShowView('pt-panelView');
       const session = ptGetSession();
-      document.getElementById('pt-hello').textContent = session ? ('Sesión: ' + session.email + ' · Alertas a: ' + (profile.alertEmail || session.email)) : '';
+      document.getElementById('pt-hello').textContent = session ? ('Sesión: ' + session.email + ' · Alertas a: ' + (profile.alertEmail || session.email) + (profile.alertNtfy ? ' · Celular (ntfy): ' + profile.alertNtfy : '') + (profile.alertPhone ? ' · Llamadas a: ' + profile.alertPhone : '')) : '';
       document.getElementById('navUser').textContent = session ? ('Hola, ' + session.name.split(' ')[0]) : '';
 
       patientActive = new Set(profile.diseases);
@@ -1428,6 +1453,16 @@
         alert('El email de alertas "' + alertEmailInput + '" no es válido. Revisalo (ej: familiar@gmail.com).');
         return;
       }
+      const alertNtfyInput = ptLimpiarNtfy(document.getElementById('pt-pNtfy').value);
+      if (alertNtfyInput && !ptNtfyValido(alertNtfyInput)) {
+        alert('El canal de ntfy "' + alertNtfyInput + '" no es válido. Usá mínimo 6 caracteres: letras, números, - o _ (o tocá "Generar").');
+        return;
+      }
+      const alertPhoneInput = ptLimpiarTelefono(document.getElementById('pt-pAlertPhone').value);
+      if (alertPhoneInput && !ptTelefonoValido(alertPhoneInput)) {
+        alert('El teléfono de emergencia "' + alertPhoneInput + '" no es válido. Escribilo con código de país, ej: +5491112345678.');
+        return;
+      }
       const errorEl = document.getElementById('pt-setupError');
       const submitBtn = e.target.querySelector('.pt-btn');
 
@@ -1445,6 +1480,8 @@
         diseases: [...ptSetupActive],
         otras: otras,
         alertEmail: alertEmailInput || (ptGetSession() ? ptGetSession().email : ''),
+        alertNtfy: alertNtfyInput,
+        alertPhone: alertPhoneInput,
         vitals: existing ? existing.vitals : null, // se completa con datos reales de la pulsera
         updatedAt: new Date().toISOString()
       };
@@ -1506,23 +1543,19 @@
        o de característica, cambialos acá para que coincidan exactamente.
 
        Del lado del ESP32-C3, la característica de VITALES tiene que mandar
-       por "notify" un texto simple con el formato:  spo2,bpm,temp,g
-       Ejemplo:  pVitalsChar->setValue("97,78,36.6,1.02"); pVitalsChar->notify();
+       por "notify" un texto simple con el formato:  spo2,bpm,temp,gMax,gMin
+       Ejemplo:  "97,78,36.6,1.02,0.98"
+       (gMax y gMin = aceleración máxima y mínima del último medio segundo.
+       Si la pulsera manda solo 4 datos, gMin no se usa; ver detección de caídas.)
 
        -------------------------------------------------------------------
-       POR QUÉ SE MUESTRAN TODOS LOS DISPOSITIVOS (no solo los que anuncian
-       el servicio de MOON):
-
-       Web Bluetooth no puede leer el modelo del chip (no existe forma de
-       filtrar "solo ESP32-C3 Super Mini") ni queremos depender del nombre
-       que le pusiste al dispositivo. Por eso se usa acceptAllDevices, que
-       hace que el selector del navegador muestre TODOS los dispositivos
-       Bluetooth cercanos (no solo ESP32) para poder elegir cualquiera sin
-       importar su nombre.
-
-       Como contrapartida, el filtro por servicio ya no evita que aparezcan
-       otros dispositivos (auriculares, etc.) en la lista — el usuario es
-       quien elige cuál es su pulsera.
+       SOLO SE MUESTRAN LAS PULSERAS MOON:
+       El selector del navegador lista únicamente los dispositivos cuyo
+       nombre Bluetooth empieza con "MOON" (también "Moon" o "moon").
+       El firmware se anuncia como "MOON" (BLE_DEVICE_NAME en
+       pulsera_moon.ino), así que auriculares, celulares, etc. no aparecen.
+       Si le cambiás el nombre a la pulsera, que siga empezando con MOON
+       (ej. "MOON-2"), o agregá el prefijo nuevo en BLE_NAME_PREFIXES.
 
        CONEXIÓN "SIEMPRE ACEPTADA":
        Al elegir cualquier dispositivo de la lista, la app se conecta a su
@@ -1559,6 +1592,7 @@
     ------------------------------------------------------------------- */
     const BLE_SERVICE_UUID        = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
     const BLE_CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a9';
+    const BLE_NAME_PREFIXES       = ['MOON', 'Moon', 'moon']; // solo aparecen dispositivos con estos nombres
 
     let bleDevice = null;
     let bleCharacteristic = null;
@@ -1736,11 +1770,12 @@
         } catch (e) { /* si falla la consulta, se intenta conectar igual */ }
       }
       try {
-        ptSetBleUI('connecting', 'Buscando dispositivos Bluetooth cercanos...');
+        ptSetBleUI('connecting', 'Buscando pulseras MOON cercanas...');
         const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
+          // Solo pulseras MOON en la lista (el nombre tiene que empezar con MOON)
+          filters: BLE_NAME_PREFIXES.map(prefijo => ({ namePrefix: prefijo })),
           // optionalServices es necesario para poder acceder a este
-          // servicio después de conectar, aunque no se use como filtro.
+          // servicio después de conectar.
           optionalServices: [BLE_SERVICE_UUID]
         });
         await ptConnectToDevice(device);
@@ -1748,7 +1783,7 @@
         console.error('MOON: error de Bluetooth', err);
         // El usuario cerró el selector sin elegir ningún dispositivo
         if (err.name === 'NotFoundError') {
-          ptSetBleUI('idle', 'Sin conectar', 'Elegí tu dispositivo de la lista');
+          ptSetBleUI('idle', 'Sin conectar', 'Elegí tu pulsera MOON de la lista');
         } else {
           ptSetBleUI('error', 'No se pudo conectar', err.message);
         }
@@ -1870,7 +1905,7 @@
 
     function ptHandleBluetoothData(event) {
       const text = new TextDecoder().decode(event.target.value);
-      // Formato: "spo2,bpm,temp" o "spo2,bpm,temp,g"
+      // Formato: "spo2,bpm,temp,gMax,gMin" (también acepta "spo2,bpm,temp,g")
       console.log('MOON BLE recibido:', text);
       document.getElementById('pt-ble-status').textContent = 'Conectada — recibiendo datos';
       const partes = text.trim().split(',');
@@ -1892,11 +1927,13 @@
         }
       }
 
-      // Aceleración (g): se procesa SIEMPRE que llegue, aunque spo2/bpm/temp
+      // Aceleración: se procesa SIEMPRE que llegue, aunque spo2/bpm/temp
       // vengan en "nan" o vacíos (el sensor de SpO2 a veces no tiene lectura).
+      // 4° dato = g máximo del último medio segundo; 5° dato (opcional) = g mínimo.
       if (partes.length >= 4) {
-        const g = parseFloat(partes[3]);
-        if (!isNaN(g)) ptProcessG(g);
+        const gMax = parseFloat(partes[3]);
+        const gMin = partes.length >= 5 ? parseFloat(partes[4]) : NaN;
+        if (!isNaN(gMax)) ptProcessG(gMax, isNaN(gMin) ? null : gMin);
       }
     }
 
@@ -1907,7 +1944,7 @@
     // quede mostrando el último valor recibido como si siguiera en vivo.
     function ptOnBluetoothDisconnected() {
       bleCharacteristic = null;
-      ptSetBleUI('idle', 'Pulsera desconectada', 'Elegí tu dispositivo de la lista');
+      ptSetBleUI('idle', 'Pulsera desconectada', 'Elegí tu pulsera MOON de la lista');
       ptRenderWaiting();
     }
 
@@ -2067,8 +2104,8 @@
     // que EmailJS lo rechace con "422 The recipients address is corrupted".
     function ptLimpiarEmail(e) {
       return String(e || '')
-        .replace(/[\s\u200B-\u200D\u2060\uFEFF\u00A0]/g, '')
-        .replace(/[\uFF20\uFE6B]/g, '@')
+        .replace(/[\s​-‍⁠﻿ ]/g, '')
+        .replace(/[＠﹫]/g, '@')
         .toLowerCase();
     }
     function ptEmailValido(e) {
@@ -2202,7 +2239,7 @@
         params: ptEmailBase({
           caida: 'Sí',
           titulo: 'Alerta MOON — caída detectada',
-          mensaje: 'El paciente ' + nombre + ' sufrió una CAÍDA y no se movió después del impacto.'
+          mensaje: 'Se detectó una posible CAÍDA de ' + nombre + ' (impacto fuerte en la pulsera). Comuníquese con el paciente.'
         }),
         onFail: () => { ptLastFallEmailTs = 0; }
       }, true);
@@ -2259,6 +2296,12 @@
         const vitales = criticos.filter(c => c !== 'caída detectada');
         if (ptAlarmState.caida === 'danger') ptSendFallEmail(); // la caída va primero
         if (vitales.length) ptSendEmergencyEmail(vitales);
+        // Notificación urgente al celular del familiar (ntfy), con sus propias esperas
+        if (ptAlarmState.caida === 'danger') ptNtfyCaida();
+        if (vitales.length) ptNtfyVitales(vitales);
+        // Llamada telefónica (Twilio), con sus propias esperas
+        if (ptAlarmState.caida === 'danger') ptLlamadaCaida();
+        else if (vitales.length) ptLlamadaVitales(vitales);
       } else {
         banner.style.display = 'none';
       }
@@ -2278,28 +2321,318 @@
     }
 
     // ==========================================================================
-    // DETECCIÓN DE CAÍDAS (acelerómetro MPU6050)
-    // Algoritmo: IMPACTO (g alto) -> espera 1s -> quietud (g ~ 1) = CAÍDA.
-    // Si después del impacto hay movimiento, se descarta.
-    // La pulsera manda la aceleración total en g como 4° dato: "spo2,bpm,temp,g"
-    //
-    // AJUSTES (versión corregida):
-    // - Tolerancia de quietud más amplia (0.5 g) para absorber el ruido del MPU6050.
-    // - Alcanza con 1 muestra posterior al impacto (la pulsera puede mandar lento).
-    // - Se confirma la caída si al menos el 80% de las muestras están quietas
-    //   (antes tenían que estar TODAS quietas).
-    // - Si se descarta, la pantalla dice por qué (pocos datos / movimiento).
+    // NOTIFICACIONES AL CELULAR (ntfy) — gratis, sin cuenta y sin servidor propio
+    // El familiar instala la app "ntfy" (Android / iPhone), toca "+" y se
+    // suscribe al canal que figura en el perfil del paciente. Ante una caída o
+    // un valor crítico, la página publica una notificación URGENTE en ese canal:
+    // suena y vibra fuerte en el celular del familiar.
+    // El nombre del canal funciona como contraseña: cualquiera que lo sepa
+    // puede leerlo o publicar en él, por eso conviene uno largo (botón "Generar").
     // ==========================================================================
-    const FALL_IMPACT_G     = 2.5;   // umbral fijo: impacto típico de una caída real
-    const FALL_WAIT_MS      = 1000;  // se ignoran las muestras del primer segundo (rebote del impacto)
-    const FALL_STILL_MS     = 4000;  // a los 4 s después del impacto se decide
-    const FALL_STILL_TOL    = 0.5;   // |g - 1| menor a esto = quieto
-    const FALL_MIN_SAMPLES  = 1;     // mínimo de muestras para poder decidir
-    const FALL_STILL_RATIO  = 0.8;   // fracción de muestras quietas necesaria
+    const NTFY_SERVER             = 'https://ntfy.sh';
+    const NTFY_REPETIR_CAIDA_MS   = 60 * 1000;       // caída activa: recordatorio cada 1 minuto
+    const NTFY_REPETIR_VITALES_MS = 2 * 60 * 1000;   // signos vitales críticos: recordatorio cada 2 minutos
 
-    let fallState = 'idle'; // 'idle' | 'impact' | 'alert'
-    let fallSamples = [];
-    let fallImpactTs = 0;
+    let ptLastFallNtfyTs = 0;
+    let ptLastVitalsNtfyTs = 0;
+
+    // Acepta el nombre solo o un link tipo https://ntfy.sh/nombre
+    function ptLimpiarNtfy(t) {
+      return String(t || '').trim()
+        .replace(/^https?:\/\/[^/]+\//i, '')
+        .replace(/[\s​-‍⁠﻿]/g, '')
+        .replace(/\/+$/, '');
+    }
+    function ptNtfyValido(t) { return /^[A-Za-z0-9_-]{6,64}$/.test(t); }
+    function ptGetNtfyTopic() {
+      const profile = ptGetMyProfile();
+      const t = ptLimpiarNtfy(profile && profile.alertNtfy);
+      return ptNtfyValido(t) ? t : '';
+    }
+
+    // Arma un nombre de canal difícil de adivinar, ej: moon-ana-k7f3x9q2
+    function ptNtfyGenerar() {
+      const nombre = (document.getElementById('pt-pName').value || 'paciente')
+        .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').split('-')[0] || 'paciente';
+      const abc = 'abcdefghijkmnpqrstuvwxyz23456789';
+      const rnd = new Uint32Array(10);
+      (window.crypto || window.msCrypto).getRandomValues(rnd);
+      const sufijo = Array.from(rnd, n => abc[n % abc.length]).join('');
+      document.getElementById('pt-pNtfy').value = 'moon-' + nombre.slice(0, 12) + '-' + sufijo;
+      ptNtfyAyuda();
+    }
+
+    // Muestra en el formulario el link para suscribirse desde el navegador
+    function ptNtfyAyuda() {
+      const el = document.getElementById('pt-ntfy-link');
+      if (!el) return;
+      const t = ptLimpiarNtfy(document.getElementById('pt-pNtfy').value);
+      if (ptNtfyValido(t)) {
+        el.innerHTML = 'En la app ntfy: <b>+</b> → escribí <b>' + t + '</b> → Suscribirse. O abrí <a href="' + NTFY_SERVER + '/' + t + '" target="_blank" rel="noopener">' + NTFY_SERVER.replace('https://', '') + '/' + t + '</a>';
+      } else {
+        el.textContent = '';
+      }
+    }
+
+    function ptNtfyStatus(ok, text) {
+      const el = document.getElementById('pt-ntfy-status');
+      if (!el) return;
+      el.style.display = 'block';
+      el.style.color = ok ? '#9bd15a' : '#f2a3a2';
+      el.textContent = (ok ? '🔔 ' : '⚠ ') + text;
+    }
+
+    // Publica en ntfy. Se manda como JSON a la raíz del servidor (sin headers
+    // propios), así el navegador no necesita "preflight" CORS.
+    async function ptNtfyEnviar(n, topicForzado) {
+      const topic = topicForzado || ptGetNtfyTopic();
+      if (!topic) return false;
+      const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      try {
+        const res = await fetch(NTFY_SERVER, {
+          method: 'POST',
+          body: JSON.stringify({
+            topic: topic,
+            title: n.titulo,
+            message: n.mensaje,
+            priority: n.prioridad || 5,
+            tags: n.tags || ['rotating_light']
+          })
+        });
+        if (!res.ok) throw new Error('ntfy respondió ' + res.status);
+        console.log('MOON: notificación de ' + n.label + ' enviada al canal ' + topic);
+        ptNtfyStatus(true, 'Notificación de ' + n.label + ' enviada al celular (' + hora + ')');
+        return true;
+      } catch (err) {
+        console.error('MOON: no se pudo mandar la notificación de ' + n.label, err);
+        ptNtfyStatus(false, 'No se pudo mandar la notificación de ' + n.label + ': ' + err.message);
+        return false;
+      }
+    }
+
+    function ptNtfyDatos() {
+      const profile = ptGetMyProfile();
+      return {
+        nombre: profile ? profile.name : 'el paciente',
+        vitales: 'Oxígeno: ' + ptVitalForMail('spo2') + ' · Pulso: ' + ptVitalForMail('bpm')
+      };
+    }
+
+    async function ptNtfyCaida() {
+      if (!ptGetSession() || !ptGetNtfyTopic()) return;
+      if (ptLastFallNtfyTs && Date.now() - ptLastFallNtfyTs < NTFY_REPETIR_CAIDA_MS) return;
+      ptLastFallNtfyTs = Date.now();
+      const d = ptNtfyDatos();
+      const ok = await ptNtfyEnviar({
+        label: 'caída',
+        titulo: '🚨 Caída detectada — ' + d.nombre,
+        mensaje: 'La pulsera MOON detectó una posible caída de ' + d.nombre + '. Comuníquese con el paciente de inmediato.\n' + d.vitales,
+        prioridad: 5,
+        tags: ['rotating_light', 'warning']
+      });
+      if (!ok) ptLastFallNtfyTs = 0; // reintenta en el próximo chequeo
+    }
+
+    async function ptNtfyVitales(criticos) {
+      if (!ptGetSession() || !ptGetNtfyTopic()) return;
+      if (ptLastVitalsNtfyTs && Date.now() - ptLastVitalsNtfyTs < NTFY_REPETIR_VITALES_MS) return;
+      ptLastVitalsNtfyTs = Date.now();
+      const d = ptNtfyDatos();
+      const ok = await ptNtfyEnviar({
+        label: 'signos vitales',
+        titulo: '🚨 Valor crítico — ' + d.nombre,
+        mensaje: d.nombre + ' tiene un valor crítico en ' + criticos.join(', ') + '. Comuníquese con el paciente.\n' + d.vitales,
+        prioridad: 5,
+        tags: ['rotating_light', 'heart']
+      });
+      if (!ok) ptLastVitalsNtfyTs = 0;
+    }
+
+    // Después de "Estoy bien": aviso tranquilo para que el familiar no se alarme de más
+    function ptNtfyFalsaAlarma() {
+      if (!ptGetSession() || !ptGetNtfyTopic()) return;
+      const d = ptNtfyDatos();
+      ptNtfyEnviar({
+        label: 'falsa alarma',
+        titulo: '✅ ' + d.nombre + ' está bien',
+        mensaje: d.nombre + ' tocó "Estoy bien": la caída anterior fue una falsa alarma.',
+        prioridad: 3,
+        tags: ['white_check_mark']
+      });
+    }
+
+    // Botón "Avisar a mi familiar" (pedido de ayuda manual)
+    async function ptNtfyManual() {
+      if (!ptGetNtfyTopic()) {
+        ptNtfyStatus(false, 'No hay canal de ntfy cargado. Agregalo en "Editar perfil".');
+        return;
+      }
+      if (!confirm('¿Mandar ahora un pedido de ayuda urgente al celular de tu familiar?')) return;
+      const btn = document.getElementById('pt-ntfy-btn');
+      btn.disabled = true;
+      const d = ptNtfyDatos();
+      await ptNtfyEnviar({
+        label: 'pedido de ayuda',
+        titulo: '🆘 ' + d.nombre + ' pide ayuda',
+        mensaje: d.nombre + ' pidió ayuda desde la página MOON. Comuníquese con el paciente de inmediato.\n' + d.vitales,
+        prioridad: 5,
+        tags: ['sos']
+      });
+      setTimeout(() => { btn.disabled = false; }, 15 * 1000);
+    }
+
+    // Botón "Probar" del perfil: usa el canal escrito en el formulario (aunque no se haya guardado)
+    async function ptNtfyPrueba(btn) {
+      const t = ptLimpiarNtfy(document.getElementById('pt-pNtfy').value);
+      const out = document.getElementById('pt-ntfy-link');
+      if (!ptNtfyValido(t)) {
+        alert('Primero escribí o generá un canal (mínimo 6 caracteres: letras, números, - o _).');
+        return;
+      }
+      btn.disabled = true;
+      const ok = await ptNtfyEnviar({
+        label: 'prueba',
+        titulo: 'Prueba de MOON',
+        mensaje: 'Si ves esto, las alertas de la pulsera MOON van a llegar a este celular.',
+        prioridad: 4,
+        tags: ['bell']
+      }, t);
+      btn.disabled = false;
+      if (out) {
+        ptNtfyAyuda();
+        out.insertAdjacentHTML('afterbegin', ok
+          ? '<span style="color:#9bd15a">✓ Prueba enviada. Si no la ves, revisá que estés suscripto a este canal.</span><br>'
+          : '<span style="color:#f2a3a2">⚠ No se pudo enviar la prueba. Revisá la conexión.</span><br>');
+      }
+    }
+
+    // ==========================================================================
+    // LLAMADA TELEFÓNICA DE EMERGENCIA (Twilio)
+    // La página NO habla directo con Twilio (eso expondría el Auth Token):
+    // le pide la llamada a una función gratis en Vercel
+    // (repo Paciente: api/llamada-emergencia.js). Pegá acá la URL de esa función.
+    // ==========================================================================
+    const TWILIO_FUNCTION_URL = 'https://TU-PROYECTO.vercel.app/api/llamada-emergencia';
+
+    const LLAMADA_GRACIA_CAIDA_MS    = 15 * 1000;      // espera antes de llamar por una caída (tiempo para "Estoy bien")
+    const LLAMADA_REPETIR_CAIDA_MS   = 3 * 60 * 1000;  // si la caída sigue activa, vuelve a llamar cada 3 minutos
+    const LLAMADA_REPETIR_VITALES_MS = 5 * 60 * 1000;  // signos vitales críticos: una llamada cada 5 minutos como máximo
+
+    let ptFallTs = 0;
+    let ptLastFallCallTs = 0;
+    let ptLastVitalsCallTs = 0;
+    let ptLlamadaEnCurso = false;
+
+    function ptLimpiarTelefono(t) {
+      let v = String(t || '').replace(/[^\d+]/g, '');
+      if (v.startsWith('00')) v = '+' + v.slice(2);
+      return v;
+    }
+    function ptTelefonoValido(t) { return /^\+[1-9]\d{7,14}$/.test(t); }
+    function ptGetEmergencyPhone() {
+      const profile = ptGetMyProfile();
+      const tel = ptLimpiarTelefono(profile && profile.alertPhone);
+      return ptTelefonoValido(tel) ? tel : '';
+    }
+
+    function ptCallStatus(ok, text) {
+      const el = document.getElementById('pt-call-status');
+      if (!el) return;
+      el.style.display = 'block';
+      el.style.color = ok ? '#9bd15a' : '#f2a3a2';
+      el.textContent = (ok ? '☎ ' : '⚠ ') + text;
+    }
+
+    function ptTwilioConfigurado() { return !!TWILIO_FUNCTION_URL && !TWILIO_FUNCTION_URL.includes('TU-PROYECTO'); }
+    function ptTwilioListo() { return !!ptGetSession() && ptTwilioConfigurado() && !!ptGetEmergencyPhone(); }
+
+    // Pide la llamada a la función de Vercel. Devuelve true si Twilio la aceptó.
+    async function ptLlamarTwilio(motivo, detalle) {
+      if (ptLlamadaEnCurso) return false;
+      ptLlamadaEnCurso = true;
+      const to = ptGetEmergencyPhone();
+      const profile = ptGetMyProfile();
+      const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      // Se manda como formulario (no JSON) para evitar el "preflight" CORS.
+      const body = new URLSearchParams({
+        to: to,
+        paciente: profile ? profile.name : 'Paciente',
+        motivo: motivo,
+        detalle: detalle || '',
+        sms: '0'
+      });
+      try {
+        const res = await fetch(TWILIO_FUNCTION_URL, { method: 'POST', body: body });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || ('HTTP ' + res.status));
+        console.log('MOON: llamada de emergencia (' + motivo + ') a ' + to, data.callSid);
+        ptCallStatus(true, 'Llamando a ' + to + ' (' + hora + ')');
+        return true;
+      } catch (err) {
+        console.error('MOON: no se pudo hacer la llamada de emergencia', err);
+        ptCallStatus(false, 'No se pudo llamar a ' + to + ': ' + err.message);
+        return false;
+      } finally {
+        ptLlamadaEnCurso = false;
+      }
+    }
+
+    async function ptLlamadaCaida() {
+      if (fallState !== 'alert' || !ptTwilioListo()) return;
+      if (Date.now() - ptFallTs < LLAMADA_GRACIA_CAIDA_MS) return;  // todavía puede tocar "Estoy bien"
+      if (ptLastFallCallTs && Date.now() - ptLastFallCallTs < LLAMADA_REPETIR_CAIDA_MS) return;
+      ptLastFallCallTs = Date.now();
+      const ok = await ptLlamarTwilio('caida');
+      if (!ok) ptLastFallCallTs = 0; // reintenta en el próximo chequeo
+    }
+
+    async function ptLlamadaVitales(criticos) {
+      if (!ptTwilioListo()) return;
+      if (ptLastVitalsCallTs && Date.now() - ptLastVitalsCallTs < LLAMADA_REPETIR_VITALES_MS) return;
+      ptLastVitalsCallTs = Date.now();
+      const ok = await ptLlamarTwilio('vitales', criticos.join(', '));
+      if (!ok) ptLastVitalsCallTs = 0;
+    }
+
+    // Botón "Pedir ayuda a mi familiar": llama (Twilio) y notifica (ntfy) a la vez
+    async function ptPedirAyuda() {
+      const hayLlamada = ptTwilioListo();
+      const hayNtfy = !!ptGetNtfyTopic();
+      if (!hayLlamada && !hayNtfy) {
+        ptCallStatus(false, 'No hay teléfono de emergencia ni canal de ntfy. Cargalos en "Editar perfil".');
+        return;
+      }
+      const medios = [hayLlamada ? 'llamar a ' + ptGetEmergencyPhone() : '', hayNtfy ? 'avisar al celular (ntfy)' : ''].filter(Boolean).join(' y ');
+      if (!confirm('¿Pedir ayuda ahora? Se va a ' + medios + '.')) return;
+      const btn = document.getElementById('pt-ntfy-btn');
+      btn.disabled = true;
+      const d = ptNtfyDatos();
+      await Promise.all([
+        hayLlamada ? ptLlamarTwilio('manual') : null,
+        hayNtfy ? ptNtfyEnviar({
+          label: 'pedido de ayuda',
+          titulo: '🆘 ' + d.nombre + ' pide ayuda',
+          mensaje: d.nombre + ' pidió ayuda desde la página MOON. Comuníquese con el paciente de inmediato.\n' + d.vitales,
+          prioridad: 5,
+          tags: ['sos']
+        }) : null
+      ]);
+      setTimeout(() => { btn.disabled = false; }, 30 * 1000);
+    }
+
+    // ==========================================================================
+    // DETECCIÓN DE CAÍDAS (acelerómetro MPU6050)
+    // Regla simple: si la aceleración supera FALL_IMPACT_G (6,5 g), se toma
+    // como caída y se da la alarma y el mail al instante.
+    // Para hacerlo MENOS sensible subí FALL_IMPACT_G (ej. 7); para MÁS, bajalo.
+    // La pulsera manda "spo2,bpm,temp,gMax,gMin": se usa gMax (el 4° dato).
+    // ==========================================================================
+    const FALL_IMPACT_G   = 6.5;   // a partir de esta aceleración (en g) = caída
+    const FALL_REARM_MS   = 5000;  // después de "Estoy bien", se ignoran movimientos por 5 s
+
+    let fallState = 'idle'; // 'idle' | 'alert'
+    let fallIgnorarHasta = 0;
 
     function ptFallUI(mode, title, sub) {
       const card = document.getElementById('pt-fall-card');
@@ -2320,41 +2653,14 @@
       document.getElementById('pt-fall-sub').textContent = sub;
     }
 
-
-    function ptProcessG(g) {
-      document.getElementById('pt-fall-g').textContent = g.toFixed(2);
+    function ptProcessG(gMax, gMin) {
+      document.getElementById('pt-fall-g').textContent = gMax.toFixed(2);
       if (fallState === 'alert') return;
-      if (fallState === 'idle') {
-        ptFallUI('active', 'Monitoreando', 'Acelerómetro activo');
-        if (g >= FALL_IMPACT_G) {
-          fallState = 'impact';
-          fallImpactTs = Date.now();
-          fallSamples = [];
-          ptFallUI('active', 'Impacto detectado', 'Verificando si la persona se levanta...');
-          setTimeout(ptEvaluateFall, FALL_STILL_MS);
-        }
-      } else if (fallState === 'impact') {
-        if (Date.now() - fallImpactTs > FALL_WAIT_MS) fallSamples.push(g);
-      }
-    }
-
-    function ptEvaluateFall() {
-      if (fallState !== 'impact') return;
-
-      console.log('MOON caída: muestras después del impacto =', fallSamples);
-
-      const quietas = fallSamples.filter(g => Math.abs(g - 1) < FALL_STILL_TOL);
-      const quieto = fallSamples.length >= FALL_MIN_SAMPLES &&
-                     (quietas.length / fallSamples.length) >= FALL_STILL_RATIO;
-
-      if (quieto) {
+      if (Date.now() < fallIgnorarHasta) return;
+      ptFallUI('active', 'Monitoreando', 'Acelerómetro activo');
+      if (gMax >= FALL_IMPACT_G) {
+        console.log('MOON caída: gMax =', gMax);
         ptTriggerFall();
-      } else {
-        fallState = 'idle';
-        const motivo = fallSamples.length < FALL_MIN_SAMPLES
-          ? 'Descartado: llegaron muy pocos datos (' + fallSamples.length + ')'
-          : 'Descartado: se detectó movimiento';
-        ptFallUI('active', 'Monitoreando', motivo);
       }
     }
 
@@ -2363,19 +2669,27 @@
       ptAlarmState.caida = 'danger';
       const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       document.getElementById('pt-fall-last').textContent = 'Hoy ' + hora;
-      ptFallUI('alert', '¡Caída detectada!', 'El paciente no se movió después del impacto');
+      ptFallUI('alert', '¡Caída detectada!', 'Se detectó un impacto fuerte');
       const profile = ptGetMyProfile();
       if (profile) { profile.lastFall = new Date().toISOString(); ptSaveMyProfile(profile); }
       // Una caída nueva siempre es un evento nuevo: se salta el tiempo de espera
       // y manda el mail enseguida. El límite solo frena los reenvíos repetidos
       // de la MISMA emergencia.
       ptLastFallEmailTs = 0;
+      ptLastFallNtfyTs = 0;  // caída nueva: la notificación sale enseguida
+      ptFallTs = Date.now();
+      ptLastFallCallTs = 0;
+      // La llamada sale si después de LLAMADA_GRACIA_CAIDA_MS nadie tocó "Estoy bien"
+      setTimeout(() => { if (fallState === 'alert') ptLlamadaCaida(); }, LLAMADA_GRACIA_CAIDA_MS + 100);
       ptCheckAlarm();
     }
 
     function ptDismissFall() {
       fallState = 'idle';
+      fallIgnorarHasta = Date.now() + FALL_REARM_MS;  // que no salte de nuevo al levantarse
+      const eraAlerta = fallState === 'alert' || ptAlarmState.caida === 'danger';
       ptAlarmState.caida = 'ok';
+      if (eraAlerta) ptNtfyFalsaAlarma();
       ptFallUI('active', 'Monitoreando', 'Acelerómetro activo');
       ptCheckAlarm();
     }
